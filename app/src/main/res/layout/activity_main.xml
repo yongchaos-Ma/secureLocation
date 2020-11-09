@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.drawerlayout.widget.DrawerLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:id="@+id/drawer_layout">
+
+    <androidx.coordinatorlayout.widget.CoordinatorLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <androidx.appcompat.widget.Toolbar
+            android:id="@+id/toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@color/dodgerblue"
+            android:minHeight="?attr/actionBarSize"
+            android:theme="?attr/actionBarTheme"
+            android:clickable="true"
+            android:focusable="true"
+            app:contentInsetStart="0dp">
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:orientation="vertical"
+                    android:gravity="center">
+                    <TextView
+                        android:id="@+id/Tv_net_info"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:singleLine="false"
+                        android:maxEms="2"
+                        android:text="其他节点数：0 邻居数：0 不可连接数：0"
+                        android:textSize="19dp"
+                        android:textColor="#ffffff"/>
+                    <TextView
+                        android:id="@+id/hr_info"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:singleLine="false"
+                        android:maxEms="2"
+                        android:text="心率数据"
+                        android:textSize="19dp"
+                        android:textColor="#ffffff"/>
+
+                </LinearLayout>
+
+        </androidx.appcompat.widget.Toolbar>
+
+        <com.baidu.mapapi.map.MapView
+            android:id="@+id/bmapView"
+            android:layout_marginTop="56dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.0"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintVertical_bias="1.0"/>
+
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/fab"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:background="@drawable/floatbutton"
+            android:src="@drawable/ic_sos"
+            app:borderWidth="0dp"
+            app:rippleColor="#C9E35F22"
+            app:elevation="8dp"
+            app:pressedTranslationZ="16dp"
+            android:layout_gravity="right|bottom"
+            android:layout_margin="16dp"
+            android:contentDescription="clicked"
+            />
+    </androidx.coordinatorlayout.widget.CoordinatorLayout>
+
+    <!--侧滑界面,必须设置layout_gravity属性,表示侧滑方向-->
+    <com.google.android.material.navigation.NavigationView
+        android:layout_gravity="start"
+        android:id="@+id/nav_view"
+        android:background="@color/mediumslateblue"
+        android:orientation="vertical"
+        android:layout_width="300dp"
+        android:layout_height="match_parent"
+        app:menu="@menu/nav_menu"
+         />
+
+</androidx.drawerlayout.widget.DrawerLayout>

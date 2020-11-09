@@ -1,0 +1,24 @@
+<menu xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/open"
+        android:title="打开蓝牙"
+        android:orderInCategory="1"
+        app:showAsAction="never"/>
+    <item
+        android:id="@+id/scan"
+        android:title="扫描设备"
+        android:orderInCategory="2"
+        app:showAsAction="never"/>
+    <item
+        android:id="@+id/disconnect"
+        android:title="断开连接"
+        android:orderInCategory="3"
+        app:showAsAction="never"/>
+    <item
+        android:id="@+id/cleandata"
+        android:title="数据清理"
+        android:orderInCategory="4"
+        app:showAsAction="never"/>
+
+</menu>

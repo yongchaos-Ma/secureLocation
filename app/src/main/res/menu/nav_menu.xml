@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <group android:checkableBehavior="single">
+        <item
+            android:id="@+id/button_trace"
+            android:icon="@drawable/ic_trace"
+            android:title="Trace"/>
+        <item
+            android:id="@+id/button_num"
+            android:icon="@drawable/ic_num"
+            android:title="Number"/>
+        <item
+            android:id="@+id/button_heart_rate"
+            android:icon="@drawable/ic_hr"
+            android:title="HR"/>
+        <item
+            android:id="@+id/button_sos"
+            android:icon="@drawable/ic_offline_map"
+            android:title="Offline Map"/>
+    </group>
+
+</menu>
