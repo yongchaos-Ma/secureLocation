@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.example.myapplication">
+
+    <uses-permission android:name="android.permission.BLUETOOTH" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" /> <!-- 以上为蓝牙权限 -->
+    <!-- 访问网络，进行地图相关业务数据请求，包括地图数据，路线规划，POI检索等 -->
+    <uses-permission android:name="android.permission.INTERNET" /> <!-- 获取网络状态，根据网络状态切换进行数据请求网络转换 -->
+    <!-- android 9.0上使用前台服务，需要添加权限 -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" /> <!-- 允许程序振动 -->
+    <uses-permission android:name="android.permission.VIBRATE" /> <!-- 允许程序在手机屏幕关闭后后台进程仍然运行 -->
+    <uses-permission android:name="android.permission.WAKE_LOCK" /> <!-- 允许程序禁用键盘锁 -->
+    <uses-permission android:name="android.permission.DISABLE_KEYGUARD" /> <!-- 闪光灯 -->
+    <uses-permission android:name="android.permission.FLASHLIGHT" /> <!-- 这个权限用于进行网络定位 -->
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" /> <!-- 这个权限用于访问GPS定位 -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" /> <!-- 用于访问wifi网络信息，wifi信息会用于进行网络定位 -->
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" /> <!-- 获取运营商信息，用于支持提供运营商信息相关的接口 -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" /> <!-- 这个权限用于获取wifi的获取权限，wifi信息会用来进行网络定位 -->
+    <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" /> <!-- 写入扩展存储，向扩展卡写入数据，用于写入离线定位数据 -->
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" /> <!-- 读取外置存储。如果开发者使用了so动态加载功能并且把so文件放在了外置存储区域，则需要申请该权限，否则不需要 -->
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+
+    <application
+        android:name=".DemoApplication"
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher_alpha"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/AppTheme">
+    <!--android:requestLegacyExternalStorage="true"-->
+
+<meta-data
+    android:name="com.baidu.lbsapi.API_KEY"
+    android:value="nuCmvvFojiaPpak1kPtSSLTl6L1fYOPe" />
+
+<activity
+    android:name=".DemoListActivity"
+    android:label="@string/app_name">
+    <intent-filter>
+        <action android:name="android.intent.action.MAIN" />
+
+        <category android:name="android.intent.category.LAUNCHER" />
+    </intent-filter>
+</activity>
+<activity android:name=".MainActivity" />
+<activity android:name=".TextOverlayActivity" />
+<activity android:name=".MarkerOverlayActivity" />
+<activity android:name=".WalkingSearchActivity" />
+<activity android:name=".LocationActivity" />
+<activity android:name=".BlueToothActivity" />
+<activity android:name=".OfflineActivity" />
+<activity android:name=".power_individual_demo.DeviceListActivity" />
+<activity
+    android:name=".BlueToothListActivity"
+    android:configChanges="orientation|keyboardHidden"
+    android:label="设备列表"
+    android:theme="@android:style/Theme.DeviceDefault.Light.Dialog.MinWidth" />
+
+<service android:name=".power_individual_demo.UartService" />
+
+        <service android:name="com.baidu.location.f" android:enabled="true" android:process=":remote"> </service>
+</application>
+
+</manifest>

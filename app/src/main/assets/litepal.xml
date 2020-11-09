@@ -1,0 +1,32 @@
+<?xml version ="1.0" encoding ="utf-8"?>
+<litepal>
+    <dbname value="SelfLocationDatabase" ></dbname>
+
+    <version value="4"></version>
+
+    <list>
+        <mapping class="com.example.myapplication.SelfLocationDatabase"></mapping>
+
+        <mapping class="com.example.myapplication.everyonelitepal.Node1"></mapping>
+        <mapping class="com.example.myapplication.everyonelitepal.Node2"></mapping>
+        <mapping class="com.example.myapplication.everyonelitepal.Node3"></mapping>
+        <mapping class="com.example.myapplication.everyonelitepal.Node4"></mapping>
+        <mapping class="com.example.myapplication.everyonelitepal.Node5"></mapping>
+        <mapping class="com.example.myapplication.everyonelitepal.Node6"></mapping>
+        <mapping class="com.example.myapplication.everyonelitepal.Node7"></mapping>
+        <mapping class="com.example.myapplication.everyonelitepal.Node8"></mapping>
+        <mapping class="com.example.myapplication.everyonelitepal.Node9"></mapping>
+        <mapping class="com.example.myapplication.everyonelitepal.Node10"></mapping>
+        <mapping class="com.example.myapplication.everyonelitepal.Node11"></mapping>
+        <mapping class="com.example.myapplication.everyonelitepal.Node12"></mapping>
+        <mapping class="com.example.myapplication.everyonelitepal.Node13"></mapping>
+        <mapping class="com.example.myapplication.everyonelitepal.Node14"></mapping>
+        <mapping class="com.example.myapplication.everyonelitepal.Node15"></mapping>
+        <mapping class="com.example.myapplication.everyonelitepal.Node16"></mapping>
+        <mapping class="com.example.myapplication.everyonelitepal.Node17"></mapping>
+        <mapping class="com.example.myapplication.everyonelitepal.Node18"></mapping>
+        <mapping class="com.example.myapplication.everyonelitepal.Node19"></mapping>
+        <mapping class="com.example.myapplication.everyonelitepal.Node20"></mapping>
+    </list>
+
+</litepal>

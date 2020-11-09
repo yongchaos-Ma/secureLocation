@@ -1,0 +1,19 @@
+<resources xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Base application theme. -->
+    <style name="AppTheme" parent="Theme.AppCompat.Light.NoActionBar">
+        <!-- Customize your theme here. -->
+        <item name="colorPrimary">@color/dodgerblue</item>
+        <item name="colorPrimaryDark">@color/mediumslateblue</item>
+        <item name="colorAccent">@color/coral</item>
+    </style>
+
+    <style name="BackgroundOnly">
+        <item name="android:windowBackground">@null</item>
+        <item name="android:windowContentOverlay">@null</item>
+        <item name="android:windowAnimationStyle">@null</item>
+        <item name="android:windowNoTitle">true</item>
+        <!--<item name="android:windowNoDisplay">true</item>
+        --><item name="android:windowIsFloating">true</item>
+    </style>
+</resources>
