@@ -14,7 +14,7 @@
             android:icon="@drawable/ic_hr"
             android:title="HR"/>
         <item
-            android:id="@+id/button_sos"
+            android:id="@+id/button_offline_map"
             android:icon="@drawable/ic_offline_map"
             android:title="Offline Map"/>
     </group>

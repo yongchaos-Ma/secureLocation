@@ -1,6 +1,5 @@
 package com.example.myapplication;
 
-import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Notification;
@@ -31,7 +30,6 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -80,8 +78,6 @@ import static com.example.myapplication.BlueToothListActivity.EXTRA_DEVICE_ADDRE
 import static com.example.myapplication.GetTime.dateToStamp;
 import static com.example.myapplication.GetTime.format;
 import static com.example.myapplication.GetTime.getCurrentTime;
-import static com.example.myapplication.R.color.coral;
-import static com.example.myapplication.R.color.darkcyan;
 import static com.example.myapplication.R.color.dodgerblue;
 import static com.example.myapplication.R.color.orange;
 import static com.example.myapplication.R.color.red;
@@ -195,7 +191,7 @@ public abstract class BaseActivity extends AppCompatActivity {
         LitePal.initialize(this);
 
         setContentView(R.layout.activity_main);
-        button1 = findViewById(R.id.button_sos);
+        button1 = findViewById(R.id.button_offline_map);
         button2 = findViewById(R.id.button_trace);
         button3 = findViewById(R.id.button_num);
         button4 = findViewById(R.id.button_heart_rate);
@@ -323,26 +319,9 @@ public abstract class BaseActivity extends AppCompatActivity {
     }
 
     public boolean onItemPlusSelected(MenuItem item){
-        final int[] p = {1};
-        final int[] q = {1};
         switch (item.getItemId()) {
-            case R.id.button_sos:// 求救
-                if(isOdd(p[0])){
-                    //向其他成员发送急救信息
-                    warnTypes = WarnOthers;
-                    sendNotificationSelf(getApplicationContext());
-                    Toast.makeText(BaseActivity.this,"sos",Toast.LENGTH_LONG).show();
-//                    button1.setText("呼救中");
-                    toolbar.setBackgroundColor(getResources().getColor(R.color.lightgreen));
-                    p[0]++;
-                }else {
-                    //停止呼救
-                    warnTypes = 0;
-//                    button1.setText("sos急救");
-//                    toolbar.setBackgroundColor(getResources().getColor(R.color.darkcyan));
-//                    warnTypes = 0;
-                    p[0]++;
-                }
+            case R.id.button_offline_map:// 求救
+                startActivity(new Intent(this,OfflineActivity.class));
                 break;
 
             case R.id.button_trace:// 轨迹
