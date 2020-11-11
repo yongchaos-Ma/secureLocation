@@ -531,17 +531,17 @@ public class LocationActivity extends BaseActivity {
                 }else
                     Log.d(TAG, "跳过自身");
             }
-            if(!points.isEmpty()){
-                OverlayOptions mOverlayOptions = new PolylineOptions()
-                        .width(10)
-                        .color(0xAAFF0000)
-                        .points(points)
-                        .dottedLine(true)
-                        ;
-                //在地图上绘制折线
-                baiduMap.addOverlay(mOverlayOptions);
-                Log.d(TAG, points.get(0).toString());
-            }
+//            if(!points.isEmpty()){
+//                OverlayOptions mOverlayOptions = new PolylineOptions()
+//                        .width(10)
+//                        .color(0xAAFF0000)
+//                        .points(points)
+//                        .dottedLine(true)
+//                        ;
+//                //在地图上绘制折线
+//                baiduMap.addOverlay(mOverlayOptions);
+//                Log.d(TAG, points.get(0).toString());
+//            }
 
         }
 

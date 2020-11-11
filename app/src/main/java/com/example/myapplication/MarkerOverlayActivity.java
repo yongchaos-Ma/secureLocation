@@ -2,6 +2,7 @@ package com.example.myapplication;
 
 import android.app.Activity;
 import android.icu.text.Transliterator;
+import android.util.Log;
 import android.util.Size;
 import android.view.View;
 import android.widget.Toast;
@@ -9,12 +10,15 @@ import android.widget.Toast;
 import com.baidu.mapapi.map.BitmapDescriptor;
 import com.baidu.mapapi.map.BitmapDescriptorFactory;
 import com.baidu.mapapi.map.MarkerOptions;
+import com.baidu.mapapi.map.OverlayOptions;
+import com.baidu.mapapi.map.PolylineOptions;
 import com.baidu.mapapi.model.LatLng;
 import com.example.myapplication.R;
 
 import java.util.HashMap;
 
 import static com.example.myapplication.BaseActivity.baiduMap;
+import static com.example.myapplication.BaseActivity.points;
 import static com.example.myapplication.BaseActivity.ssd;
 import static com.example.myapplication.BaseActivity.xqzf;
 import static com.example.myapplication.BaseActivity.xupt;
@@ -22,6 +26,7 @@ import static com.example.myapplication.BaseActivity.xxx;
 
 public class MarkerOverlayActivity extends Activity {
     HashMap<LatLng,String> map = new HashMap<>();
+    private String TAG;
 
 
     public void init() {
@@ -50,6 +55,17 @@ public class MarkerOverlayActivity extends Activity {
                 .title("xqzf")//titile
                 .icon(icond);     //图标
         baiduMap.addOverlay(options);
+        if(!points.isEmpty()) {
+            OverlayOptions mOverlayOptions = new PolylineOptions()
+                    .width(10)
+                    .color(0xAAFF0000)
+                    .points(points)
+                    .dottedLine(true);
+            //在地图上绘制折线
+            baiduMap.addOverlay(mOverlayOptions);
+            Log.d(TAG, points.get(0).toString());
+        }
+
     }
 
     public void show(LatLng latLng,String name){

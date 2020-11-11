@@ -131,7 +131,7 @@ public abstract class BaseActivity extends AppCompatActivity {
     public static List<Integer> indirectList = new ArrayList<Integer>();
     public static List<String> ReceivedNum = new ArrayList<String>();
     public static List<String> ReceivedMsg = new ArrayList<String>();
-    public List<LatLng> points = new ArrayList<LatLng>();
+    public static List<LatLng> points = new ArrayList<LatLng>();
     public static int NodeInDanger = 0;
     public static int SelfNumber = 0;
     public int WarnOthers = 1;
@@ -181,7 +181,7 @@ public abstract class BaseActivity extends AppCompatActivity {
     public int danger_HR = 0;
     String cutted  = "0";
     int ScanPeriod = 10000;
-    int trackSlot = 3600000;
+    public int trackSlot = 0;
     final int[] p = {1};
 
     //@RequiresApi(api = Build.VERSION_CODES.M)
@@ -255,13 +255,6 @@ public abstract class BaseActivity extends AppCompatActivity {
                 headImage.setClickable(false);
             }
         });
-//        @SuppressLint("ResourceType") ImageView head_iv= headview.findViewById(R.drawable.imperial_fist);
-//        head_iv.setOnClickListener(new View.OnClickListener() {
-//            @Override public void onClick(View v) {
-//                Toast.makeText(BaseActivity.this,"image touched",Toast.LENGTH_LONG).show();
-//            }
-//
-//        });
 
         //navView.setCheckedItem(R.id.button_sos);
         navView.setNavigationItemSelectedListener(new NavigationView.OnNavigationItemSelectedListener() {
@@ -327,6 +320,7 @@ public abstract class BaseActivity extends AppCompatActivity {
             case R.id.button_trace:// 轨迹
                 getCurrentTime();
                 TrackdialogChoice();
+
                 break;
 
             case R.id.button_num:// 编号
@@ -616,41 +610,41 @@ public abstract class BaseActivity extends AppCompatActivity {
         final String[] items = {"一小时", "五小时", "十二小时","一天","全部"};
         alert = null;
         builder = new AlertDialog.Builder(this);
-        builder = builder.setIcon(R.mipmap.ic_launcher)
+        builder = builder.setIcon(R.drawable.ic_trace)
                 .setTitle("设置路径复现范围")
-//                .setSingleChoiceItems(items, 0, (dialog, which) -> {
-//                        switch (items[which]){
-//
-//                            trackShowup(trackSlot);
-//                    }
-//                });
         .setSingleChoiceItems(items, 0,
                 (dialog, which) -> {
                     switch (items[which]){
                         case "一小时":
-                            trackSlot = 3600;
+                            //trackSlot = 3600;
+                            trackShowup(3600);
+                            Toast.makeText(BaseActivity.this, "监测间隔设置为：" + items[which],
+                                Toast.LENGTH_SHORT).show();
                             break;
                         case "五小时":
-                            trackSlot = 18000;
+                            //trackSlot = 18000;
+                            trackShowup(18000);
                             break;
                         case "十二小时":
-                            trackSlot = 43200;
+                            //trackSlot = 43200;
+                            trackShowup(43200);
                             break;
                         case "一天":
-                            trackSlot = 86400;
+                            //trackSlot = 86400;
+                            trackShowup(86400);
                             break;
                         case "全部":
-                            trackSlot = 900000000;
+                            //trackSlot = 900000000;
+                            trackShowup(90000000);
                             break;
                     }
 
-                    Toast.makeText(BaseActivity.this, "监测间隔设置为：" + items[which],
-                            Toast.LENGTH_SHORT).show();
                 });
         builder.setPositiveButton("确定", (dialog, which) -> {
                         dialog.dismiss();
-            trackShowup(trackSlot);
-                        //Toast.makeText(BaseActivity.this, "确定", Toast.LENGTH_SHORT).show();
+                        //trackShowup(trackSlot);
+            Log.d(TAG, "TrackdialogChoice: "+trackSlot);
+            startActivity(new Intent(this,TextOverlayActivity.class));
                     });
         builder.create().show();
         //alert.show();
@@ -662,6 +656,7 @@ public abstract class BaseActivity extends AppCompatActivity {
     public void trackShowup(int trackSlot) {
         getCurrentTime();
         int slots = 0;
+        points.clear();
         try {
              slots = Integer.parseInt(dateToStamp(format)) - trackSlot -1;
             Log.d(TAG, "trackShowup: "+ slots);

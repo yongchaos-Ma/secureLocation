@@ -47,7 +47,7 @@ public class MainActivity extends BaseActivity {
 
     @Override
     public void init() {
-        showToast("欢迎使用！");
+
 
         mLocationClient = new LocationClient(getApplicationContext());
         //声明LocationClient类
@@ -56,20 +56,8 @@ public class MainActivity extends BaseActivity {
 
         initLocation();
 
-        baiduMap.setMyLocationEnabled(true);//开启定位图层
-        MyLocationConfiguration.LocationMode mode = MyLocationConfiguration.LocationMode.COMPASS;
-        boolean enableDirection = true;
-        BitmapDescriptor customMarker = BitmapDescriptorFactory.fromResource(R.drawable.icon_aa5);
-
-        MyLocationConfiguration config = new MyLocationConfiguration(mode,enableDirection,customMarker);
-
-        baiduMap.setMyLocationConfiguration(config);
-
-        //mLocationClient.start();//开始定位
-
         MarkerOverlayActivity markerOverlayActivity = new MarkerOverlayActivity();
         markerOverlayActivity.init();
-
     }
 
     private void initLocation(){
