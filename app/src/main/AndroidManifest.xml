@@ -28,38 +28,39 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-    <!--android:requestLegacyExternalStorage="true"-->
+        <!-- android:requestLegacyExternalStorage="true" -->
+        <meta-data
+            android:name="com.baidu.lbsapi.API_KEY"
+            android:value="nuCmvvFojiaPpak1kPtSSLTl6L1fYOPe" />
 
-<meta-data
-    android:name="com.baidu.lbsapi.API_KEY"
-    android:value="nuCmvvFojiaPpak1kPtSSLTl6L1fYOPe" />
+        <activity
+            android:name=".DemoListActivity"
+            android:label="@string/app_name">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
 
-<activity
-    android:name=".DemoListActivity"
-    android:label="@string/app_name">
-    <intent-filter>
-        <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity android:name=".MainActivity" />
+        <activity android:name=".TextOverlayActivity" />
+        <activity android:name=".MarkerOverlayActivity" />
+        <activity android:name=".WalkingSearchActivity" />
+        <activity android:name=".LocationActivity" />
+        <activity android:name=".BlueToothActivity" />
+        <activity android:name=".OfflineActivity" />
+        <activity android:name=".power_individual_demo.DeviceListActivity" />
+        <activity
+            android:name=".BlueToothListActivity"
+            android:configChanges="orientation|keyboardHidden"
+            android:label="设备列表"
+            android:theme="@android:style/Theme.DeviceDefault.Light.Dialog.MinWidth" />
 
-        <category android:name="android.intent.category.LAUNCHER" />
-    </intent-filter>
-</activity>
-<activity android:name=".MainActivity" />
-<activity android:name=".TextOverlayActivity" />
-<activity android:name=".MarkerOverlayActivity" />
-<activity android:name=".WalkingSearchActivity" />
-<activity android:name=".LocationActivity" />
-<activity android:name=".BlueToothActivity" />
-<activity android:name=".OfflineActivity" />
-<activity android:name=".power_individual_demo.DeviceListActivity" />
-<activity
-    android:name=".BlueToothListActivity"
-    android:configChanges="orientation|keyboardHidden"
-    android:label="设备列表"
-    android:theme="@android:style/Theme.DeviceDefault.Light.Dialog.MinWidth" />
-
-<service android:name=".power_individual_demo.UartService" />
-
-        <service android:name="com.baidu.location.f" android:enabled="true" android:process=":remote"> </service>
-</application>
+        <service android:name=".power_individual_demo.UartService" />
+        <service
+            android:name="com.baidu.location.f"
+            android:enabled="true"
+            android:process=":remote"></service>
+    </application>
 
 </manifest>

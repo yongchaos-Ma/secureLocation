@@ -6,6 +6,8 @@
         <item name="colorPrimary">@color/dodgerblue</item>
         <item name="colorPrimaryDark">@color/mediumslateblue</item>
         <item name="colorAccent">@color/coral</item>
+        <item name="toolbarNavigationButtonStyle">@style/myToolbarNavigationButtonStyle</item>
+        <item name="toolbarStyle">@style/ToolbarLeft</item>
     </style>
 
     <style name="BackgroundOnly">
@@ -16,4 +18,11 @@
         <!--<item name="android:windowNoDisplay">true</item>
         --><item name="android:windowIsFloating">true</item>
     </style>
+
+    <style name="myToolbarNavigationButtonStyle" parent="@style/Widget.AppCompat.Toolbar.Button.Navigation">
+        <item name="android:minWidth">0dp</item>
+        <item name="android:padding">10dp</item>
+        <item name="android:scaleType">centerInside</item>
+    </style>
+
 </resources>

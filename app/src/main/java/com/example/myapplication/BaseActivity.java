@@ -62,7 +62,6 @@ import org.litepal.LitePal;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.math.BigDecimal;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
@@ -124,15 +123,7 @@ public abstract class BaseActivity extends AppCompatActivity {
     public boolean BLE_STOPPED = false;
     public static BluetoothAdapter mBtAdapter;
 
-    public static List<Integer> numList = new ArrayList<Integer>();
-    public static List<Double> latList = new ArrayList<Double>();
-    public static List<Double> lngList = new ArrayList<Double>();
-    public static List<Integer> dangerList = new ArrayList<Integer>();
-    public static List<Integer> indirectList = new ArrayList<Integer>();
-    public static List<String> ReceivedNum = new ArrayList<String>();
-    public static List<String> ReceivedMsg = new ArrayList<String>();
     public static List<LatLng> points = new ArrayList<LatLng>();
-    public static int NodeInDanger = 0;
     public static int SelfNumber = 0;
     public int WarnOthers = 1;
     public int EDGE_WARNING = 2;
@@ -144,8 +135,7 @@ public abstract class BaseActivity extends AppCompatActivity {
     public int UnconnectableNumber = 0;
     public int warnTypes = 0;
     public static int getWarnedTypes = 0;
-
-    public static int ColorChangedTime = 0;
+    public boolean BE_WARNED = false;
 
     public PendingIntent pendingIntent;
     NotificationChannel mChannel;
@@ -154,10 +144,6 @@ public abstract class BaseActivity extends AppCompatActivity {
     public static final int NotificationId3 = 3;
 
     public static String readStr ;
-    public static int NodeReceivedTime = 0;
-    public static List<NodeReceived> receivedList = new ArrayList<NodeReceived>();
-    public static List<DangerNode> receivedDangerNodeList = new ArrayList<DangerNode>();
-    public static List<Integer> edgeTimeList = new ArrayList<Integer>();
 
     public int EDGE_WARNING_TIME = 0;
     public boolean setTarget = false;
@@ -174,7 +160,7 @@ public abstract class BaseActivity extends AppCompatActivity {
     private BluetoothDevice mDevice = null;
     private BluetoothAdapter mBandBtAdapter = null;
     BleNotifyParse bleNotify = new BleNotifyParse();
-    private byte[] tx_data = new byte[512];
+    private final byte[] tx_data = new byte[512];
     private int tx_data_len = 0;
     private int tx_data_front = 0;
     private int tx_data_rear = 0;
@@ -183,6 +169,13 @@ public abstract class BaseActivity extends AppCompatActivity {
     int ScanPeriod = 10000;
     public int trackSlot = 0;
     final int[] p = {1};
+
+    public LocalBroadcastManager mLocalBroadcastManager;
+    private IntentFilter mIntentFilter;
+    private WarningBroadcastReceiver mWarningBroadcastReceiver;
+    private LostBroadcastReceiver mLostBroadcastReceiver;
+    private SelfWarningBroadcastReceiver mSWBroadcastReceiver;
+    private PeaceBroadcastReceiver mPeaceBroadcastReceiver;
 
     //@RequiresApi(api = Build.VERSION_CODES.M)
     @Override
@@ -200,8 +193,10 @@ public abstract class BaseActivity extends AppCompatActivity {
         Tv6 = findViewById(R.id.hr_info);
         toolbar.inflateMenu(R.menu.main);
 
+        mLocalBroadcastManager = LocalBroadcastManager.getInstance(this);
 
-        mMapView = (MapView) findViewById(R.id.bmapView);
+
+        mMapView = findViewById(R.id.bmapView);
         //获得地图控制器
         baiduMap = mMapView.getMap();
         //MKOfflineMap mOffline = new MKOfflineMap();
@@ -270,6 +265,7 @@ public abstract class BaseActivity extends AppCompatActivity {
         if(actionBar != null){
             actionBar.setDisplayHomeAsUpEnabled(true);
             actionBar.setHomeAsUpIndicator(R.drawable.ic_menu);
+
         }
         FloatingActionButton fab = findViewById(R.id.fab);
         fab.setBackgroundTintMode(PorterDuff.Mode.SRC_OVER);
@@ -280,11 +276,16 @@ public abstract class BaseActivity extends AppCompatActivity {
                 if(isOdd(p[0])){
                     //向其他成员发送急救信息
                     warnTypes = WarnOthers;
-                    sendNotificationSelf(getApplicationContext());
+                    //sendNotificationSelf(getApplicationContext());
+                    Intent intent = new Intent("com.example.myapplication.SELF_WARN_BROADCAST");
+                    intent.setPackage("com.example.myapplication");
+                    intent.setComponent(new ComponentName(BaseActivity.this, SelfWarningBroadcastReceiver.class));
+                    mLocalBroadcastManager.sendBroadcast(intent);
                     Toast.makeText(BaseActivity.this,"sos",Toast.LENGTH_LONG).show();
 //                    button1.setText("呼救中");
                     toolbar.setBackgroundColor(getResources().getColor(R.color.lightgreen));
                     fab.setBackgroundTintList(ColorStateList.valueOf(getResources().getColor(red)));
+                    BE_WARNED = true;
                     p[0]++;
                 }else {
                     //停止呼救
@@ -293,6 +294,7 @@ public abstract class BaseActivity extends AppCompatActivity {
                     toolbar.setBackgroundColor(getResources().getColor(dodgerblue));
                     fab.setBackgroundTintList(ColorStateList.valueOf(getResources().getColor(orange)));
 //                    warnTypes = 0;
+                    BE_WARNED = false;
                     p[0]++;
                 }
             }
@@ -300,13 +302,30 @@ public abstract class BaseActivity extends AppCompatActivity {
 
         //setToolbar();
         Tv6.setText("心率数据");
-        Tv6.setGravity(Gravity.CENTER);
+        Tv6.setGravity(Gravity.LEFT);
         init();
         LitePal.getDatabase();
         mDrawerLayout.openDrawer(GravityCompat.START);
 
+        mIntentFilter = new IntentFilter();
+
+        mIntentFilter.addAction("com.example.myapplication.LOST_BROADCAST");
+        mIntentFilter.addAction("com.example.myapplication.SELF_WARN_BROADCAST");
+        mIntentFilter.addAction("com.example.myapplication.WARNING_BROADCAST");
+        mIntentFilter.addAction("com.example.myapplication.PEACE_BROADCAST");
+        mLostBroadcastReceiver = new LostBroadcastReceiver();
+        mSWBroadcastReceiver = new SelfWarningBroadcastReceiver();
+        mWarningBroadcastReceiver = new WarningBroadcastReceiver();
+        mPeaceBroadcastReceiver = new PeaceBroadcastReceiver();
+
+        mLocalBroadcastManager.registerReceiver(mLostBroadcastReceiver, mIntentFilter);
+        mLocalBroadcastManager.registerReceiver(mSWBroadcastReceiver, mIntentFilter);
+        mLocalBroadcastManager.registerReceiver(mWarningBroadcastReceiver, mIntentFilter);
+        mLocalBroadcastManager.registerReceiver(mPeaceBroadcastReceiver, mIntentFilter);
+
+
         timerFlash.schedule(timerFlashTask,0,3000);//刷新网络
-        timerChanged.schedule(timerChangedTask,0,5000);
+        //timerChanged.schedule(timerChangedTask,0,5000);
        //getApplicationContext();
 
     }
@@ -526,7 +545,7 @@ public abstract class BaseActivity extends AppCompatActivity {
                     }.start();
 
                     if(BleNotifyParse.received != null){
-                        if(BleNotifyParse.received.substring(2, 4).equals("86") && BleNotifyParse.received.substring(8, 10).equals("00")){
+                        if(BleNotifyParse.received.startsWith("86", 2) && BleNotifyParse.received.startsWith("00", 8)){
                             cutted = BleNotifyParse.received.substring(10,12);
                             tens =  Integer.parseInt(cutted, 16);
                             cutted = String.valueOf(tens);
@@ -535,7 +554,7 @@ public abstract class BaseActivity extends AppCompatActivity {
                         }
                         if(Integer.parseInt(cutted) <40 && BAND_CONNECTED){
                             if(danger_HR > 4){
-                                sendNotificationSelf(getApplicationContext());
+                                //sendNotificationSelf(getApplicationContext());
                                 warnTypes = HR_Warning;
                             }
                             danger_HR++;
@@ -688,7 +707,7 @@ public abstract class BaseActivity extends AppCompatActivity {
             else{
                 Tv6.setText("手环连接已断开");
             }
-            Tv6.setGravity(Gravity.CENTER);
+            Tv6.setGravity(Gravity.LEFT);
 
         }
     };
@@ -710,8 +729,8 @@ public abstract class BaseActivity extends AppCompatActivity {
     public Timer timerStartHR;
     public TimerTask timerStartHRTask;
 
-    private Handler HRhandler = new Handler();
-    private Runnable HRrunnable = new Runnable() {
+    private final Handler HRhandler = new Handler();
+    private final Runnable HRrunnable = new Runnable() {
         public void run() {
             int len;
             if(tx_data_len > 0)
@@ -782,7 +801,7 @@ public abstract class BaseActivity extends AppCompatActivity {
     }
 
     // UART service connected/disconnected
-    private ServiceConnection mServiceConnection = new ServiceConnection() {
+    private final ServiceConnection mServiceConnection = new ServiceConnection() {
         public void onServiceConnected(ComponentName className, IBinder rawBinder) {
             if (intf == intf_ble_uart) {
                 mUartService = ((UartService.LocalBinder) rawBinder)
@@ -922,19 +941,11 @@ public abstract class BaseActivity extends AppCompatActivity {
         }
     }
 
-    private static Pattern NUMBER_PATTERN = Pattern.compile("-?[0-9]+(\\.[0-9]+)?");
+    private static final Pattern NUMBER_PATTERN = Pattern.compile("-?[0-9]+(\\.[0-9]+)?");
     /**
      * 利用正则表达式来判断字符串是否为数字
      */
     public static boolean checkStrIsNum02(String str) {
-        String bigStr;
-        try {
-            /** 先将str转成BigDecimal，然后在转成String */
-            bigStr = new BigDecimal(str).toString();
-        } catch (Exception e) {
-            /** 如果转换数字失败，说明该str并非全部为数字 */
-            return false;
-        }
         Matcher isNum = NUMBER_PATTERN.matcher(str);
         return isNum.matches();
     }
@@ -1004,12 +1015,7 @@ public abstract class BaseActivity extends AppCompatActivity {
                     msgbuffer[msgbytes] = (byte) '\n';
                     msgbytes++;
                     readStr = new String(msgbuffer, 0, msgbytes);
-                    getCurrentTime();
-                    NodeReceivedTime = Integer.parseInt( dateToStamp(format));
                     new HeadAnalaysis().Head(readStr);
-                    if(GET_WARNED){
-                        sendNotificationOthers();
-                    }
                 } catch (IOException | ParseException e) {
                     e.printStackTrace();
                     break;
@@ -1025,9 +1031,9 @@ public abstract class BaseActivity extends AppCompatActivity {
                 Tv5.setText("蓝牙尚未连接");
             }
             else{
-                Tv5.setText("其他节点数：" + TotalNumber + " 邻居数：" + NeighborNumber +" 不可连接数："+ UnconnectableNumber);
+                Tv5.setText("节点数：" + TotalNumber + " 邻居数：" + NeighborNumber +" 丢失数："+ UnconnectableNumber);
             }
-            Tv5.setGravity(Gravity.CENTER);
+            Tv5.setGravity(Gravity.LEFT);
 
         }
     };
@@ -1053,7 +1059,40 @@ public abstract class BaseActivity extends AppCompatActivity {
         }
     };
 
-    public void sendNotificationSelf(Context context ) {
+    public class WarningBroadcastReceiver extends BroadcastReceiver{
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if(intent.getAction().equals("com.example.myapplication.WARNING_BROADCAST"))
+            {
+                int dangerNode = intent.getIntExtra("dangerNode",0);
+                sendNotificationOthers(dangerNode);
+            }
+
+        }
+    }
+    public class LostBroadcastReceiver extends BroadcastReceiver{
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if(intent.getAction().equals("com.example.myapplication.LOST_BROADCAST"))
+            edgeWarningNotification();
+        }
+    }
+    public class SelfWarningBroadcastReceiver extends BroadcastReceiver{
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if(intent.getAction().equals("com.example.myapplication.SELF_WARN_BROADCAST"))
+            sendNotificationSelf();
+        }
+    }
+    public class PeaceBroadcastReceiver extends BroadcastReceiver{
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if(intent.getAction().equals("com.example.myapplication.PEACE_BROADCAST"))
+                handler.post(runnableUi2_1);
+        }
+    }
+
+    public void sendNotificationSelf() {
         String id1 = "channel_001";
         String name1 = "WarningMessageFromSelf";
         NotificationManager notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
@@ -1066,7 +1105,7 @@ public abstract class BaseActivity extends AppCompatActivity {
                 mChannel.setVibrationPattern(new long[]{100,200,300});
                 assert notificationManager != null;
                 notificationManager.createNotificationChannel(mChannel);
-                notification = new Notification.Builder(this)
+                notification = new Notification.Builder(this, id1)
                         .setChannelId(id1)
                         .setContentTitle("提醒")
                         .setContentText("节点" + SelfNumber + "（自身）发出警报")
@@ -1093,7 +1132,7 @@ public abstract class BaseActivity extends AppCompatActivity {
         notificationManager.notify(NotificationId1, notification);
     }
 
-    public void sendNotificationOthers(){
+    public void sendNotificationOthers(int dangerNode ){
         String id2 = "channel_002";
         String name2 = "WarningMessageFromOthers";
         NotificationManager notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
@@ -1112,14 +1151,14 @@ public abstract class BaseActivity extends AppCompatActivity {
                 assert notificationManager != null;
                 notificationManager.createNotificationChannel(mChannel);
                 if (1 == getWarnedTypes) {
-                    showUpText = "节点" + NodeInDanger + "发出警报";
+                    showUpText = "节点" + dangerNode + "发出警报";
                 } else if (2 == getWarnedTypes) {
-                    showUpText = "节点" + NodeInDanger + "濒临走失";
+                    showUpText = "节点" + dangerNode + "濒临走失";
                 } else if (3 == getWarnedTypes) {
-                    showUpText = "节点" + NodeInDanger + "生命危急！！！";
+                    showUpText = "节点" + dangerNode + "生命危急！！！";
                 }
 
-                notification = new Notification.Builder(this)
+                notification = new Notification.Builder(this, id2)
                         .setChannelId(id2)
                         .setContentTitle("提醒")
                         .setContentText(showUpText)
@@ -1129,7 +1168,7 @@ public abstract class BaseActivity extends AppCompatActivity {
             }else  {
                 NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this)
                         .setContentTitle("提醒")
-                        .setContentText("节点" + NodeInDanger + "发出警报")
+                        .setContentText("节点" + dangerNode + "发出警报")
                         .setSmallIcon(R.drawable.ic_launcher)
                         .setVibrate(new long[]{100,200,300})
                         .setChannelId(id2)
@@ -1195,47 +1234,47 @@ public abstract class BaseActivity extends AppCompatActivity {
         }
     };
 
-    public Timer timerChanged = new Timer();
-    public TimerTask timerChangedTask = new TimerTask() {
-        @Override
-        public void run() {
-            getCurrentTime();
-            int now = 0;
-            try {
-                now = Integer.parseInt( dateToStamp(format));
-            } catch (ParseException e) {
-                e.printStackTrace();
-            }
-            if(warnTypes != 0 && ColorChangedTime != 0){
-                int finalNow = now;
-                new Thread(){
-                        public void run(){
-                            try {
-                                Thread.sleep(10000);
-                                if(ColorChangedTime+10 < finalNow)
-                                {
-                                    handler.post(runnableUi2_1);
-                                    warnTypes = 0;
-                                    getWarnedTypes = 0;
-                                }
-                            } catch (InterruptedException e) {
-                                e.printStackTrace();
-                            }
-
-
-                        }
-                    }.start();
-            }
-            if (!GET_WARNED){
-                new Thread(){
-                    public void run(){
-                        handler.post(runnableUi2_1);
-                        getWarnedTypes = 0;
-                    }
-                }.start();
-            }
-        }
-    };
+//    public Timer timerChanged = new Timer();
+//    public TimerTask timerChangedTask = new TimerTask() {
+//        @Override
+//        public void run() {
+//            getCurrentTime();
+//            int now = 0;
+//            try {
+//                now = Integer.parseInt( dateToStamp(format));
+//            } catch (ParseException e) {
+//                e.printStackTrace();
+//            }
+//            if(warnTypes != 0 && ColorChangedTime != 0){
+//                int finalNow = now;
+//                new Thread(){
+//                        public void run(){
+//                            try {
+//                                Thread.sleep(10000);
+//                                if(ColorChangedTime+10 < finalNow)
+//                                {
+//                                    handler.post(runnableUi2_1);
+//                                    warnTypes = 0;
+//                                    getWarnedTypes = 0;
+//                                }
+//                            } catch (InterruptedException e) {
+//                                e.printStackTrace();
+//                            }
+//
+//
+//                        }
+//                    }.start();
+//            }
+//            if (!GET_WARNED){
+//                new Thread(){
+//                    public void run(){
+//                        handler.post(runnableUi2_1);
+//                        getWarnedTypes = 0;
+//                    }
+//                }.start();
+//            }
+//        }
+//    };
 
 
     // 取消链接
@@ -1275,7 +1314,7 @@ public abstract class BaseActivity extends AppCompatActivity {
         //在activity执行onDestroy时执行mMapView.onDestroy()，实现地图生命周期管理
         mMapView.onDestroy();
         timerFlash.cancel();
-        timerChanged.cancel();
+        //timerChanged.cancel();
         stopTimer();
         super.onDestroy();
         try {
@@ -1294,5 +1333,9 @@ public abstract class BaseActivity extends AppCompatActivity {
             mUartService.stopSelf();
             mUartService = null;
         }
+
+        mLocalBroadcastManager.unregisterReceiver(mWarningBroadcastReceiver);
+        mLocalBroadcastManager.unregisterReceiver(mSWBroadcastReceiver);
+        mLocalBroadcastManager.unregisterReceiver(mLostBroadcastReceiver);
     }
 }

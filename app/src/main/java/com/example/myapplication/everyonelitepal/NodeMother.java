@@ -7,8 +7,8 @@ public class NodeMother extends LitePalSupport {
     private double latitude;
     private double longitude;
     private Integer time;
-    private int WarnType;
-    private int HeartRate;
+    private Integer WarnType;
+    private Integer HeartRate;
     private boolean direct;
 
     public boolean isDirect() {
@@ -52,19 +52,19 @@ public class NodeMother extends LitePalSupport {
         this.time = time;
     }
 
-    public int getWarnType() {
+    public Integer getWarnType() {
         return WarnType;
     }
 
     public void setWarnType(int warnType) {
-        WarnType = warnType;
+        this.WarnType = warnType;
     }
 
-    public int getHeartRate() {
+    public Integer getHeartRate() {
         return HeartRate;
     }
 
     public void setHeartRate(int heartRate) {
-        HeartRate = heartRate;
+        this.HeartRate = heartRate;
     }
 }

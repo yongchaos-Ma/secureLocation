@@ -1,12 +1,8 @@
 package com.example.myapplication;
 
+import android.content.ContentValues;
 import android.database.Cursor;
-import android.os.Looper;
-import android.util.Log;
 
-import java.util.*;
-
-import com.baidu.location.BDLocation;
 import com.example.myapplication.everyonelitepal.Node1;
 import com.example.myapplication.everyonelitepal.Node10;
 import com.example.myapplication.everyonelitepal.Node11;
@@ -30,38 +26,22 @@ import com.example.myapplication.everyonelitepal.Node9;
 import com.example.myapplication.everyonelitepal.NodeMother;
 
 import org.litepal.LitePal;
-import org.litepal.crud.LitePalSupport;
 
-import static com.example.myapplication.BaseActivity.NodeInDanger;
-import static com.example.myapplication.BaseActivity.NodeReceivedTime;
-import static com.example.myapplication.BaseActivity.ReceiveLatitude;
-import static com.example.myapplication.BaseActivity.ReceiveLongitude;
-import static com.example.myapplication.BaseActivity.ReceiveSerialNumber;
-import static com.example.myapplication.BaseActivity.ReceivedMsg;
-import static com.example.myapplication.BaseActivity.ReceivedNum;
-import static com.example.myapplication.BaseActivity.SelfNumber;
-import static com.example.myapplication.BaseActivity.TAG;
-import static com.example.myapplication.BaseActivity.dangerList;
-import static com.example.myapplication.BaseActivity.indirectList;
-import static com.example.myapplication.BaseActivity.latList;
-import static com.example.myapplication.BaseActivity.lngList;
-import static com.example.myapplication.BaseActivity.numList;
-import static com.example.myapplication.BaseActivity.getWarnedTypes;
-
-import static com.example.myapplication.BaseActivity.receivedDangerNodeList;
-import static com.example.myapplication.BaseActivity.receivedList;
-import static com.example.myapplication.BaseActivity.ColorChangedTime;
-import static com.example.myapplication.GetTime.dateToStamp;
-import static com.example.myapplication.GetTime.format;
-import static com.example.myapplication.GetTime.getCurrentTime;
-import static com.example.myapplication.BaseActivity.GET_WARNED;
-
-import java.math.BigDecimal;
 import java.text.ParseException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import static com.example.myapplication.BaseActivity.GET_WARNED;
+import static com.example.myapplication.BaseActivity.ReceiveLatitude;
+import static com.example.myapplication.BaseActivity.ReceiveLongitude;
+import static com.example.myapplication.BaseActivity.ReceiveSerialNumber;
+import static com.example.myapplication.BaseActivity.SelfNumber;
+import static com.example.myapplication.BaseActivity.getWarnedTypes;
+import static com.example.myapplication.GetTime.dateToStamp;
+import static com.example.myapplication.GetTime.format;
 
 public class HeadAnalaysis {
 
@@ -89,6 +69,7 @@ public class HeadAnalaysis {
     private int ReceivedTime = 0;
     private int alertNum;
     private boolean direct = true;
+    private boolean WRONG_RECEIVED = false;
 
     public void MapConsist(){
         m1.put("Node1", mNode1);
@@ -114,162 +95,41 @@ public class HeadAnalaysis {
     }
 
     public void Head (String readStr) throws ParseException {
-        int i;
+        if ("#".equals(readStr.substring(0, 1))) {
+            direct = true;
+        } else if ("*".equals(readStr.substring(0, 1))) {
+            direct = false;
+        }
+        readStr = readStr.replace("#", "");
+        readStr = readStr.replace("*", "");
+        String[] readStrArray = readStr.split(",");
+        if(checkStrIsNum02(readStrArray[0])){
+            if(Integer.parseInt(readStrArray[0]) < 20 && Integer.parseInt(readStrArray[0]) != SelfNumber){
+                ReceiveSerialNumber = Integer.parseInt(readStrArray[0]);
+            }else
+                WRONG_RECEIVED = true;
+        }else
+            WRONG_RECEIVED = true;
+        if(checkStrIsNum02(readStrArray[1]) && checkStrIsNum02(readStrArray[2])){
+            ReceiveLatitude = Double.parseDouble(readStrArray[1]);
+            ReceiveLongitude = Double.parseDouble(readStrArray[2]);
+        }else
+            WRONG_RECEIVED = true;
+        if(!WRONG_RECEIVED){
+            ReceivedTime = Integer.parseInt(dateToStamp(format));
 
-        switch (readStr.substring(0, 1)) {
-            case "#": {
-                direct = true;
-                readStr = readStr.replace("#", "");
-                String[] readStrArray = readStr.split(",");
-                if(checkStrIsNum02(readStrArray[0])){
-                    if(Integer.parseInt(readStrArray[0]) < 20 && Integer.parseInt(readStrArray[0]) != SelfNumber){
-                        ReceiveSerialNumber = Integer.parseInt(readStrArray[0]);
-                    }else {break;}
-
-                }else { break; }
-                if(checkStrIsNum02(readStrArray[1]) && checkStrIsNum02(readStrArray[2])){
-                    ReceiveLatitude = Double.parseDouble(readStrArray[1]);
-                    ReceiveLongitude = Double.parseDouble(readStrArray[2]);
-                }else { break; }
-
-                ReceivedTime = Integer.parseInt(dateToStamp(format));
-
-                for (i = numList.size() - 1; i > -1; i--) {
-                    if (numList.get(i).equals(ReceiveSerialNumber)) {
-                        numList.remove(numList.get(i));
-                        latList.remove(latList.get(i));
-                        lngList.remove(lngList.get(i));
-                    }
+            if(readStrArray[3].equals("sos0") || readStrArray[3].equals("sos1") ||
+                    readStrArray[3].equals("sos2") || readStrArray[3].equals("sos3")){
+                alertNum = Integer.parseInt(readStrArray[3].replace("sos", ""));
+                getWarnedTypes = alertNum;
+                if(alertNum != 0) {
+                    GET_WARNED = true;
                 }
-                for (i = indirectList.size() - 1; i > -1; i--) {
-                    if (indirectList.get(i).equals(ReceiveSerialNumber)) {
-                        indirectList.remove(indirectList.get(i));
-                    }
-                }
-                for (i = receivedList.size() - 1; i > -1; i--) {
-                    if (receivedList.get(i).getNumber() == ReceiveSerialNumber) {
-                        receivedList.remove(receivedList.get(i));
-                    }
-                }
-                if (ReceiveSerialNumber != SelfNumber) {
-                    numList.add(ReceiveSerialNumber);
-                    latList.add(ReceiveLatitude);
-                    lngList.add(ReceiveLongitude);
-                    NodeReceived nodeReceived = new NodeReceived(ReceiveSerialNumber, NodeReceivedTime);
-                    receivedList.add(nodeReceived);
-                }
-//                String cut = readStrArray[3].replace("sos", "");
-//                Log.d(TAG, cut);
-                if(readStrArray[3].equals("sos0") || readStrArray[3].equals("sos1") ||
-                        readStrArray[3].equals("sos2") || readStrArray[3].equals("sos3")){
-                    alertNum = Integer.parseInt(readStrArray[3].replace("sos", ""));
-                    if(alertNum != 0) {
-                        ColorChangedTime = Integer.parseInt(dateToStamp(format));
-
-                        NodeInDanger = Integer.parseInt(readStrArray[0]);
-                        for (int k = dangerList.size() - 1; k > -1; k--) {
-                            if (dangerList.get(k).equals(NodeInDanger)) {
-                                dangerList.remove(dangerList.get(k));
-                            }
-                        }
-                        for (i = receivedDangerNodeList.size() - 1; i > -1; i--) {
-                            if (receivedDangerNodeList.get(i).getDangerNumber() == NodeInDanger) {
-                                receivedDangerNodeList.remove(receivedDangerNodeList.get(i));
-                            }
-                        }
-                        //if(checkStrIsNum02(DangerArray[2]))
-                        getWarnedTypes = alertNum;
-                        dangerList.add(NodeInDanger);
-                        DangerNode dangerNode = new DangerNode(NodeInDanger, NodeReceivedTime);
-                        receivedDangerNodeList.add(dangerNode);
-                        GET_WARNED = true;
-                    }else getWarnedTypes= 0;
-                    storage(ReceiveSerialNumber);
-                }
-
-
-//                            for (String s : readStrArray) {
-//                                System.out.println(s);
-//                                System.out.println("");
-//                            }
-                break;
-            }
-            case "*": {
-                direct = false;
-                readStr = readStr.replace("*", "");
-                String[] readStrArray = readStr.split(",");
-                if(checkStrIsNum02(readStrArray[0])){
-                    if(Integer.parseInt(readStrArray[0]) < 20 && Integer.parseInt(readStrArray[0]) != SelfNumber){
-                        ReceiveSerialNumber = Integer.parseInt(readStrArray[0]);
-                        indirectList.add(ReceiveSerialNumber);
-                    }else {break;}
-                }else { break; }
-                if(checkStrIsNum02(readStrArray[1]) && checkStrIsNum02(readStrArray[2])){
-                    ReceiveLatitude = Double.parseDouble(readStrArray[1]);
-                    ReceiveLongitude = Double.parseDouble(readStrArray[2]);
-                }else { break; }
-
-                for (i = numList.size() - 1; i > -1; i--) {
-                    if (numList.get(i).equals(ReceiveSerialNumber)) {
-                        numList.remove(numList.get(i));
-                        latList.remove(latList.get(i));
-                        lngList.remove(lngList.get(i));
-                    }
-                }
-                for (i = receivedList.size() - 1; i > -1; i--) {
-                    if (receivedList.get(i).getNumber() == ReceiveSerialNumber) {
-                        receivedList.remove(receivedList.get(i));
-                    }
-                }
-                if (ReceiveSerialNumber != SelfNumber) {
-                    NodeReceived nodeReceived = new NodeReceived(ReceiveSerialNumber, NodeReceivedTime);
-                    receivedList.add(nodeReceived);
-                    numList.add(ReceiveSerialNumber);
-                    latList.add(ReceiveLatitude);
-                    lngList.add(ReceiveLongitude);
-                }
-                ReceivedTime = Integer.parseInt(dateToStamp(format));
-                if(readStrArray[3].equals("sos0") || readStrArray[3].equals("sos1") ||
-                        readStrArray[3].equals("sos2") || readStrArray[3].equals("sos3")){
-                    alertNum = Integer.parseInt(readStrArray[3].replace("sos", ""));
-                    if(alertNum != 0) {
-                        ColorChangedTime = Integer.parseInt(dateToStamp(format));
-
-                        NodeInDanger = Integer.parseInt(readStrArray[0]);
-                        for (int k = dangerList.size() - 1; k > -1; k--) {
-                            if (dangerList.get(k).equals(NodeInDanger)) {
-                                dangerList.remove(dangerList.get(k));
-                            }
-                        }
-                        for (i = receivedDangerNodeList.size() - 1; i > -1; i--) {
-                            if (receivedDangerNodeList.get(i).getDangerNumber() == NodeInDanger) {
-                                receivedDangerNodeList.remove(receivedDangerNodeList.get(i));
-                            }
-                        }
-                        //if(checkStrIsNum02(DangerArray[2]))
-                        getWarnedTypes = alertNum;
-                        dangerList.add(NodeInDanger);
-                        DangerNode dangerNode = new DangerNode(NodeInDanger, NodeReceivedTime);
-                        receivedDangerNodeList.add(dangerNode);
-                        GET_WARNED = true;
-                    }else getWarnedTypes= 0;
-                    storage(ReceiveSerialNumber);
-                }
-
-                break;
-            }
-            case "%": {
-                readStr = readStr.replace("%", "");
-                String[] readStrArray = readStr.split("//");
-                ReceivedNum.add(readStrArray[0]);
-                ReceivedMsg.add(readStrArray[1]);
-                String MessageShow = readStrArray[0] + ": " + readStrArray[1];
-                System.out.println(MessageShow);
-                break;
+                storage(ReceiveSerialNumber);
             }
         }
     }
-    private static Pattern NUMBER_PATTERN = Pattern.compile("-?[0-9]+(\\.[0-9]+)?");
+    private static final Pattern NUMBER_PATTERN = Pattern.compile("-?[0-9]+(\\.[0-9]+)?");
     /**
      * 利用正则表达式来判断字符串是否为数字
      */
@@ -288,7 +148,7 @@ public class HeadAnalaysis {
         if(number == 0){
             m1.get(Node).setLatitude(ReceiveLatitude);
             m1.get(Node).setLongitude(ReceiveLongitude);
-            m1.get(Node).setWarnType(alertNum);
+            m1.get(Node).setWarnType(getWarnedTypes);
             m1.get(Node).setTime(ReceivedTime);
             m1.get(Node).setDirect(direct);
             m1.get(Node).save();
@@ -296,15 +156,16 @@ public class HeadAnalaysis {
             if(NodeInfors.get(0).getLatitude() == ReceiveLatitude &&
                     NodeInfors.get(0).getLongitude() == ReceiveLongitude){
 
-                m1.get(Node).setWarnType(alertNum);
-                m1.get(Node).setTime(ReceivedTime);
-                m1.get(Node).setDirect(direct);
-                m1.get(Node).update(NodeInfors.get(0).getId());
+                ContentValues values = new ContentValues();
+                values.put("warntype", getWarnedTypes);
+                values.put("time", ReceivedTime);
+                values.put("direct", direct);
+                LitePal.update(m1.get(Node).getClass(), values, NodeInfors.get(0).getId());
 
             } else {
                 m1.get(Node).setLatitude(ReceiveLatitude);
                 m1.get(Node).setLongitude(ReceiveLongitude);
-                m1.get(Node).setWarnType(alertNum);
+                m1.get(Node).setWarnType(getWarnedTypes);
                 m1.get(Node).setTime(ReceivedTime);
                 m1.get(Node).setDirect(direct);
                 m1.get(Node).save();

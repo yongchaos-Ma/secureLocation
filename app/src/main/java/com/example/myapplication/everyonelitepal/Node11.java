@@ -1,14 +1,12 @@
 package com.example.myapplication.everyonelitepal;
 
-import org.litepal.crud.LitePalSupport;
-
 public class Node11 extends NodeMother {
     private int id;
     private double latitude;
     private double longitude;
     private Integer time;
-    private int WarnType;
-    private int HeartRate;
+    private Integer WarnType;
+    private Integer HeartRate;
     private boolean direct;
 
     public boolean isDirect() {
@@ -18,6 +16,7 @@ public class Node11 extends NodeMother {
     public void setDirect(boolean direct) {
         this.direct = direct;
     }
+
 
     public int getId() {
         return id;
@@ -51,20 +50,20 @@ public class Node11 extends NodeMother {
         this.time = time;
     }
 
-    public int getWarnType() {
+    public Integer getWarnType() {
         return WarnType;
     }
 
     public void setWarnType(int warnType) {
-        WarnType = warnType;
+        this.WarnType = warnType;
     }
 
-    public int getHeartRate() {
+    public Integer getHeartRate() {
         return HeartRate;
     }
 
     public void setHeartRate(int heartRate) {
-        HeartRate = heartRate;
+        this.HeartRate = heartRate;
     }
 }
 

@@ -4,13 +4,9 @@ import android.app.Notification;
 import android.app.PendingIntent;
 import android.content.Intent;
 import android.database.Cursor;
-import android.database.sqlite.SQLiteOpenHelper;
-import android.graphics.Typeface;
 import android.os.Build;
 import android.os.CountDownTimer;
 import android.util.Log;
-import android.view.Gravity;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import com.baidu.location.BDAbstractLocationListener;
@@ -20,14 +16,12 @@ import com.baidu.location.LocationClientOption;
 import com.baidu.mapapi.map.BaiduMap;
 import com.baidu.mapapi.map.BitmapDescriptor;
 import com.baidu.mapapi.map.BitmapDescriptorFactory;
-import com.baidu.mapapi.map.InfoWindow;
 import com.baidu.mapapi.map.MapStatusUpdate;
 import com.baidu.mapapi.map.MapStatusUpdateFactory;
 import com.baidu.mapapi.map.MarkerOptions;
 import com.baidu.mapapi.map.MyLocationConfiguration;
 import com.baidu.mapapi.map.MyLocationData;
 import com.baidu.mapapi.map.OverlayOptions;
-import com.baidu.mapapi.map.PolylineOptions;
 import com.baidu.mapapi.model.LatLng;
 import com.example.myapplication.everyonelitepal.Node1;
 import com.example.myapplication.everyonelitepal.Node10;
@@ -55,7 +49,6 @@ import org.litepal.LitePal;
 
 import java.io.IOException;
 import java.text.ParseException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -64,7 +57,6 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 import static com.example.myapplication.GetTime.dateToStamp;
-import static com.example.myapplication.GetTime.getCurrentTime;
 import static com.example.myapplication.GetTime.format;
 
 public class LocationActivity extends BaseActivity {
@@ -80,27 +72,13 @@ public class LocationActivity extends BaseActivity {
     public static String time = null;
     public byte[] localizeBuffer;
     public byte[] warningBuffer;
-    public TextView tv;
     protected MapStatusUpdate mapStatusUpdate;
     public LatLng position;
     public LatLng targetPosition;
-    public BitmapDescriptor bitmapDescriptor;
-    public InfoWindow mInfoWindow;
     public boolean[] MarkerClicked;
     public MarkerOptions options;
-    public boolean OUT_OF_REACH = false;
-    public boolean DANGER_OUT_OF_REACH = false;
-    private int ReceivedTime = 0;
-    public BDLocation Time_Location;
-    private final int TIMER_PREPARE = 0;
-    private final int TIMER_STARTED = 1;
-    private final int TIMER_RESET = 2;
-    BitmapDescriptor icon = BitmapDescriptorFactory.fromResource(R.drawable.icon_gcoding);
-    BitmapDescriptor dangerIcon = BitmapDescriptorFactory.fromResource(R.drawable.icon_gcoding_yellow);
-    BitmapDescriptor indirectIcon = BitmapDescriptorFactory.fromResource(R.drawable.icon_gcoding_blue);
-    BitmapDescriptor lostIcon = BitmapDescriptorFactory.fromResource(R.drawable.icon_gcoding_grey);
+
     BitmapDescriptor targetIcon = BitmapDescriptorFactory.fromResource(R.drawable.target_icon_neo);
-    public ArrayList<Integer> lost_count_list = new ArrayList<Integer>();
 
     Map<Integer, NodeMother> mapShow = new HashMap<Integer, NodeMother>();
     Map<Integer, BitmapDescriptor> mapNodePics = new HashMap<Integer, BitmapDescriptor>();
@@ -495,6 +473,9 @@ public class LocationActivity extends BaseActivity {
     final TimerTask task = new TimerTask() {
         @Override
         public void run() {
+            BE_WARNED = false;
+            int allNum = 0;
+            int lostNum = 0;
             baiduMap.clear();
             GetTime.getCurrentTime();
             options = new MarkerOptions();
@@ -505,18 +486,27 @@ public class LocationActivity extends BaseActivity {
                 int number = c.getCount();
 
                 if(number != 0){
+                    allNum++;
                     List<? extends NodeMother> NodeInfors =
                             LitePal.order("time desc").limit(1).find(mapShow.get(nodeNum).getClass());
                     position = new LatLng(NodeInfors.get(0).getLatitude(),
                             NodeInfors.get(0).getLongitude());
-
                         options.position(position);
                         try {
-                            if(NodeInfors.get(0).getTime() < Integer.parseInt(dateToStamp(format))-40)
+                            if(NodeInfors.get(0).getTime() < Integer.parseInt(dateToStamp(format))-40){
                                 options.icon(mapLostNodePics.get(nodeNum));
-                            else if(NodeInfors.get(0).getWarnType() != 0)
+                                lostNum++;
+                            }
+                            else if(NodeInfors.get(0).getWarnType() != 0){
                                 options.icon(mapWarningNodePics.get(nodeNum));
-                            else if(NodeInfors.get(0).isDirect())
+                                if(GET_WARNED){
+                                    Intent intent = new Intent("com.example.myapplication.WARNING_BROADCAST");
+                                    intent.setPackage("com.example.myapplication");
+                                    intent.putExtra("dangerNode", nodeNum);
+                                    mLocalBroadcastManager.sendBroadcast(intent);
+                                    BE_WARNED = true;
+                                }
+                            } else if(NodeInfors.get(0).isDirect())
                                 options.icon(mapNodePics.get(nodeNum));
                             else if(!NodeInfors.get(0).isDirect())
                                 options.icon(mapIndirectNodePics.get(nodeNum));
@@ -530,6 +520,21 @@ public class LocationActivity extends BaseActivity {
                     Log.d(TAG, "跳过了一张空的表");
                 }else
                     Log.d(TAG, "跳过自身");
+            }
+            //Tv5.setText("其他节点数：" + TotalNumber + " 邻居数：" + NeighborNumber +" 不可连接数："+ UnconnectableNumber);
+            TotalNumber = allNum;
+            UnconnectableNumber = lostNum;
+            NeighborNumber = allNum - lostNum;
+            if((TotalNumber > 1 && NeighborNumber <= 1) || NeighborNumber == 0){
+                Intent intent = new Intent("com.example.myapplication.LOST_BROADCAST");
+                intent.setPackage("com.example.myapplication");
+                mLocalBroadcastManager.sendBroadcast(intent);
+                BE_WARNED = true;
+            }
+            if(!BE_WARNED){
+                Intent intent = new Intent("com.example.myapplication.PEACE_BROADCAST");
+                intent.setPackage("com.example.myapplication");
+                mLocalBroadcastManager.sendBroadcast(intent);
             }
 //            if(!points.isEmpty()){
 //                OverlayOptions mOverlayOptions = new PolylineOptions()
@@ -547,7 +552,7 @@ public class LocationActivity extends BaseActivity {
 
     };
 
-    private CountDownTimer mCountDownTimer = new CountDownTimer(10000, 1000) {
+    private final CountDownTimer mCountDownTimer = new CountDownTimer(10000, 1000) {
 
         @Override
         public void onTick(long millisUntilFinished) {
@@ -575,6 +580,29 @@ public class LocationActivity extends BaseActivity {
                     e.printStackTrace();
                 }
             }
+            new Thread(new Thread()).start();
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        Thread.sleep(3000);//延时1s
+                        //do something
+                        if (CONNECT_STATUS && warnTypes != 0) {
+                            String WarningMessage = "!" + SelfNumber + "," + "sos" + warnTypes + "," + "\n";
+                            WarningMessage = WarningMessage.replace("\\n","\n");
+                            warningBuffer = WarningMessage.getBytes();
+                            try {
+                                mmOutStream = mmSocket.getOutputStream();
+                                mmOutStream.write(warningBuffer);
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }).start();
 
         }
     };

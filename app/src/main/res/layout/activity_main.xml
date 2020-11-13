@@ -19,29 +19,30 @@
             android:minHeight="?attr/actionBarSize"
             android:clickable="true"
             android:focusable="true"
-            app:contentInsetStart="0dp">
+            app:contentInsetStart="0dp"
+            android:alpha="0.8">
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:orientation="vertical"
-                    android:gravity="center">
+                    app:contentInsetStart="0dp"
+                    android:padding="0dp"
+                    >
                     <TextView
                         android:id="@+id/Tv_net_info"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:singleLine="false"
-                        android:maxEms="2"
-                        android:text="其他节点数：0 邻居数：0 不可连接数：0"
-                        android:textSize="19dp"
-                        android:textColor="#ffffff"/>
+                        android:layout_marginStart="0dp"
+                        android:text="节点数：0 邻居数：0 丢失数：0"
+                        android:textSize="17sp"
+                        android:textColor="#FFFFFF"/>
                     <TextView
                         android:id="@+id/hr_info"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:singleLine="false"
-                        android:maxEms="2"
+                        android:layout_marginStart="0dp"
                         android:text="心率数据"
-                        android:textSize="19dp"
+                        android:textSize="17sp"
                         android:textColor="#ffffff"/>
 
                 </LinearLayout>
