@@ -5,7 +5,6 @@ import android.app.PendingIntent;
 import android.content.Intent;
 import android.database.Cursor;
 import android.os.Build;
-import android.os.CountDownTimer;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -21,7 +20,6 @@ import com.baidu.mapapi.map.MapStatusUpdateFactory;
 import com.baidu.mapapi.map.MarkerOptions;
 import com.baidu.mapapi.map.MyLocationConfiguration;
 import com.baidu.mapapi.map.MyLocationData;
-import com.baidu.mapapi.map.OverlayOptions;
 import com.baidu.mapapi.model.LatLng;
 import com.example.myapplication.everyonelitepal.Node1;
 import com.example.myapplication.everyonelitepal.Node10;
@@ -80,8 +78,8 @@ public class LocationActivity extends BaseActivity {
 
     BitmapDescriptor targetIcon = BitmapDescriptorFactory.fromResource(R.drawable.target_icon_neo);
 
-    Map<Integer, NodeMother> mapShow = new HashMap<Integer, NodeMother>();
-    Map<Integer, BitmapDescriptor> mapNodePics = new HashMap<Integer, BitmapDescriptor>();
+    Map<Integer, NodeMother> mapShow = new HashMap<>();
+    Map<Integer, BitmapDescriptor> mapNodePics = new HashMap<>();
     Map<Integer, BitmapDescriptor> mapLostNodePics = new HashMap<Integer, BitmapDescriptor>();
     Map<Integer, BitmapDescriptor> mapIndirectNodePics = new HashMap<Integer, BitmapDescriptor>();
     Map<Integer, BitmapDescriptor> mapWarningNodePics = new HashMap<Integer, BitmapDescriptor>();
@@ -425,8 +423,6 @@ public class LocationActivity extends BaseActivity {
         MyLocationConfiguration config = new MyLocationConfiguration(mode,enableDirection,customMarker);
         baiduMap.setMyLocationConfiguration(config);
         mMapView.getChildAt(2).setPadding(0,0,47,185);//这是控制缩放控件的位置
-//        int plus = createRandom();
-//        int ran2 = plus*2/3;
         timerSycLoc.schedule(LocationSycTask, 0, 10000);//定时同步信息
         timer.schedule(task,0,10000);//同步其他点
 
@@ -479,56 +475,59 @@ public class LocationActivity extends BaseActivity {
             baiduMap.clear();
             GetTime.getCurrentTime();
             options = new MarkerOptions();
-            for (Integer nodeNum : mapShow.keySet()) {
-                if(nodeNum != SelfNumber){
-                                    String Node = "Node" + nodeNum;
-                Cursor c = LitePal.findBySQL("select * from " + Node);
-                int number = c.getCount();
+            if(EXTEND_LEGACY){
+                for (Integer nodeNum : mapShow.keySet()) {
+                    if(nodeNum != SelfNumber){
+                        String Node = "Node" + nodeNum;
+                        Cursor c = LitePal.findBySQL("select * from " + Node);
+                        int number = c.getCount();
 
-                if(number != 0){
-                    allNum++;
-                    List<? extends NodeMother> NodeInfors =
-                            LitePal.order("time desc").limit(1).find(mapShow.get(nodeNum).getClass());
-                    position = new LatLng(NodeInfors.get(0).getLatitude(),
-                            NodeInfors.get(0).getLongitude());
-                        options.position(position);
-                        try {
-                            if(NodeInfors.get(0).getTime() < Integer.parseInt(dateToStamp(format))-40){
-                                options.icon(mapLostNodePics.get(nodeNum));
-                                lostNum++;
-                            }
-                            else if(NodeInfors.get(0).getWarnType() != 0){
-                                options.icon(mapWarningNodePics.get(nodeNum));
-                                if(GET_WARNED){
-                                    Intent intent = new Intent("com.example.myapplication.WARNING_BROADCAST");
-                                    intent.setPackage("com.example.myapplication");
-                                    intent.putExtra("dangerNode", nodeNum);
-                                    mLocalBroadcastManager.sendBroadcast(intent);
-                                    BE_WARNED = true;
+                        if(number != 0){
+                            allNum++;
+                            List<? extends NodeMother> NodeInfors =
+                                    LitePal.order("time desc").limit(1).find(mapShow.get(nodeNum).getClass());
+                            position = new LatLng(NodeInfors.get(0).getLatitude(),
+                                    NodeInfors.get(0).getLongitude());
+                            options.position(position);
+                            try {
+                                if(NodeInfors.get(0).getTime() < Integer.parseInt(dateToStamp(format))-40){
+                                    options.icon(mapLostNodePics.get(nodeNum));
+                                    lostNum++;
                                 }
-                            } else if(NodeInfors.get(0).isDirect())
-                                options.icon(mapNodePics.get(nodeNum));
-                            else if(!NodeInfors.get(0).isDirect())
-                                options.icon(mapIndirectNodePics.get(nodeNum));
-                            baiduMap.addOverlay(options);
-                        } catch (ParseException e) {
-                            e.printStackTrace();
-                        }
-
-                    Log.d(TAG, "现在在显示" + nodeNum);
-                }else
-                    Log.d(TAG, "跳过了一张空的表");
-                }else
-                    Log.d(TAG, "跳过自身");
+                                else if(NodeInfors.get(0).getWarnType() != 0){
+                                    options.icon(mapWarningNodePics.get(nodeNum));
+                                    if(GET_WARNED){
+                                        Intent intent = new Intent("com.example.myapplication.WARNING_BROADCAST");
+                                        intent.setPackage("com.example.myapplication");
+                                        intent.putExtra("dangerNode", nodeNum);
+                                        mLocalBroadcastManager.sendBroadcast(intent);
+                                        BE_WARNED = true;
+                                    }
+                                } else if(NodeInfors.get(0).isDirect())
+                                    options.icon(mapNodePics.get(nodeNum));
+                                else if(!NodeInfors.get(0).isDirect())
+                                    options.icon(mapIndirectNodePics.get(nodeNum));
+                                baiduMap.addOverlay(options);
+                                LOAD_COMPLETED = true;
+                            } catch (ParseException e) {
+                                e.printStackTrace();
+                            }
+                            Log.d(TAG, "现在在显示" + nodeNum);
+                        }else
+                            Log.d(TAG, "跳过了一张空的表");
+                    }else
+                        Log.d(TAG, "跳过自身");
+                }
             }
-            //Tv5.setText("其他节点数：" + TotalNumber + " 邻居数：" + NeighborNumber +" 不可连接数："+ UnconnectableNumber);
+
             TotalNumber = allNum;
             UnconnectableNumber = lostNum;
             NeighborNumber = allNum - lostNum;
-            if((TotalNumber > 1 && NeighborNumber <= 1) || NeighborNumber == 0){
+            if((TotalNumber > 1 && NeighborNumber <= 1) || NeighborNumber == 0 && TotalNumber != 0){
                 Intent intent = new Intent("com.example.myapplication.LOST_BROADCAST");
                 intent.setPackage("com.example.myapplication");
                 mLocalBroadcastManager.sendBroadcast(intent);
+                warnTypes = EDGE_WARNING;
                 BE_WARNED = true;
             }
             if(!BE_WARNED){
@@ -550,19 +549,6 @@ public class LocationActivity extends BaseActivity {
 
         }
 
-    };
-
-    private final CountDownTimer mCountDownTimer = new CountDownTimer(10000, 1000) {
-
-        @Override
-        public void onTick(long millisUntilFinished) {
-
-        }
-
-        @Override
-        public void onFinish() {
-
-        }
     };
 
     public Timer timerSycLoc = new Timer();
@@ -607,17 +593,15 @@ public class LocationActivity extends BaseActivity {
         }
     };
 
-   public void markOnTarget(){
-        if(targetPosition != null && setTarget){
-            OverlayOptions option = new MarkerOptions()
-                    .position(targetPosition)
-                    .icon(targetIcon);
-            //在地图上添加Marker，并显示
-            baiduMap.addOverlay(option);
-        }
-    }
-
-
+//   public void markOnTarget(){
+//        if(targetPosition != null && setTarget){
+//            OverlayOptions option = new MarkerOptions()
+//                    .position(targetPosition)
+//                    .icon(targetIcon);
+//            //在地图上添加Marker，并显示
+//            baiduMap.addOverlay(option);
+//        }
+//    }
 
     private void initLocation(){
 
@@ -629,7 +613,6 @@ public class LocationActivity extends BaseActivity {
         //LocationMode. Battery_Saving：低功耗;
 
         option.setCoorType("bd09ll");
-
         //可选，设置返回经纬度坐标类型，默认GCJ02
         //GCJ02：国测局坐标；
         //BD09ll：百度经纬度坐标；
@@ -678,11 +661,7 @@ public class LocationActivity extends BaseActivity {
         super.onResume();
         mLocationClient.disableLocInForeground(true);
     }
-//    @Override
-//    protected void onStop() {
-//        super.onStop();
-//        //在activity执行onResume时执行mMapView. onResume ()，实现地图生命周期管理
-//    }
+
     @Override
     protected void onPause() {
         //在activity执行onPause时执行mMapView. onPause ()，实现地图生命周期管理
@@ -697,7 +676,6 @@ public class LocationActivity extends BaseActivity {
         mLocationClient.stop();//停止定位
         timer.cancel();
         timerSycLoc.cancel();
-        //mMapView.onDestroy();
         super.onDestroy();
     }
 }

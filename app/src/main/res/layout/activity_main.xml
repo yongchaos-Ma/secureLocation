@@ -15,7 +15,7 @@
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="@color/dodgerblue"
+            android:background="@drawable/btn_shape"
             android:minHeight="?attr/actionBarSize"
             android:clickable="true"
             android:focusable="true"

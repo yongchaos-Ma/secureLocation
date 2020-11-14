@@ -25,11 +25,14 @@ import android.os.IBinder;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.Gravity;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.PopupWindow;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -121,9 +124,10 @@ public abstract class BaseActivity extends AppCompatActivity {
     public static boolean CAN_NOTIFY = false;
     public boolean HR_DETECTED = false;
     public boolean BLE_STOPPED = false;
+    public boolean EXTEND_LEGACY = false;
     public static BluetoothAdapter mBtAdapter;
 
-    public static List<LatLng> points = new ArrayList<LatLng>();
+    public static List<LatLng> points = new ArrayList<>();
     public static int SelfNumber = 0;
     public int WarnOthers = 1;
     public int EDGE_WARNING = 2;
@@ -136,6 +140,7 @@ public abstract class BaseActivity extends AppCompatActivity {
     public int warnTypes = 0;
     public static int getWarnedTypes = 0;
     public boolean BE_WARNED = false;
+    public boolean LOAD_COMPLETED = false;
 
     public PendingIntent pendingIntent;
     NotificationChannel mChannel;
@@ -145,7 +150,6 @@ public abstract class BaseActivity extends AppCompatActivity {
 
     public static String readStr ;
 
-    public int EDGE_WARNING_TIME = 0;
     public boolean setTarget = false;
     public static Handler handler = null;
 
@@ -171,11 +175,9 @@ public abstract class BaseActivity extends AppCompatActivity {
     final int[] p = {1};
 
     public LocalBroadcastManager mLocalBroadcastManager;
-    private IntentFilter mIntentFilter;
     private WarningBroadcastReceiver mWarningBroadcastReceiver;
     private LostBroadcastReceiver mLostBroadcastReceiver;
     private SelfWarningBroadcastReceiver mSWBroadcastReceiver;
-    private PeaceBroadcastReceiver mPeaceBroadcastReceiver;
 
     //@RequiresApi(api = Build.VERSION_CODES.M)
     @Override
@@ -215,7 +217,6 @@ public abstract class BaseActivity extends AppCompatActivity {
         baiduMap.setMapStatus(mapStatusUpdate);
 
         hr_config = new Config(BaseActivity.this);
-        //showSystemParameter();
 
         mBandBtAdapter = BluetoothAdapter.getDefaultAdapter();
         mBtAdapter = BluetoothAdapter.getDefaultAdapter();
@@ -251,7 +252,6 @@ public abstract class BaseActivity extends AppCompatActivity {
             }
         });
 
-        //navView.setCheckedItem(R.id.button_sos);
         navView.setNavigationItemSelectedListener(new NavigationView.OnNavigationItemSelectedListener() {
             @Override
             public boolean onNavigationItemSelected(@NonNull MenuItem item) {
@@ -276,203 +276,229 @@ public abstract class BaseActivity extends AppCompatActivity {
                 if(isOdd(p[0])){
                     //向其他成员发送急救信息
                     warnTypes = WarnOthers;
-                    //sendNotificationSelf(getApplicationContext());
                     Intent intent = new Intent("com.example.myapplication.SELF_WARN_BROADCAST");
                     intent.setPackage("com.example.myapplication");
                     intent.setComponent(new ComponentName(BaseActivity.this, SelfWarningBroadcastReceiver.class));
                     mLocalBroadcastManager.sendBroadcast(intent);
                     Toast.makeText(BaseActivity.this,"sos",Toast.LENGTH_LONG).show();
-//                    button1.setText("呼救中");
                     toolbar.setBackgroundColor(getResources().getColor(R.color.lightgreen));
                     fab.setBackgroundTintList(ColorStateList.valueOf(getResources().getColor(red)));
                     BE_WARNED = true;
-                    p[0]++;
                 }else {
                     //停止呼救
                     warnTypes = 0;
-//                    button1.setText("sos急救");
                     toolbar.setBackgroundColor(getResources().getColor(dodgerblue));
                     fab.setBackgroundTintList(ColorStateList.valueOf(getResources().getColor(orange)));
-//                    warnTypes = 0;
                     BE_WARNED = false;
-                    p[0]++;
                 }
+                p[0]++;
             }
         });
 
-        //setToolbar();
         Tv6.setText("心率数据");
-        Tv6.setGravity(Gravity.LEFT);
+        Tv6.setGravity(Gravity.START);
         init();
         LitePal.getDatabase();
         mDrawerLayout.openDrawer(GravityCompat.START);
 
-        mIntentFilter = new IntentFilter();
+        IntentFilter intentFilter = new IntentFilter();
 
-        mIntentFilter.addAction("com.example.myapplication.LOST_BROADCAST");
-        mIntentFilter.addAction("com.example.myapplication.SELF_WARN_BROADCAST");
-        mIntentFilter.addAction("com.example.myapplication.WARNING_BROADCAST");
-        mIntentFilter.addAction("com.example.myapplication.PEACE_BROADCAST");
+        intentFilter.addAction("com.example.myapplication.LOST_BROADCAST");
+        intentFilter.addAction("com.example.myapplication.SELF_WARN_BROADCAST");
+        intentFilter.addAction("com.example.myapplication.WARNING_BROADCAST");
+        intentFilter.addAction("com.example.myapplication.PEACE_BROADCAST");
         mLostBroadcastReceiver = new LostBroadcastReceiver();
         mSWBroadcastReceiver = new SelfWarningBroadcastReceiver();
         mWarningBroadcastReceiver = new WarningBroadcastReceiver();
-        mPeaceBroadcastReceiver = new PeaceBroadcastReceiver();
+        PeaceBroadcastReceiver peaceBroadcastReceiver = new PeaceBroadcastReceiver();
 
-        mLocalBroadcastManager.registerReceiver(mLostBroadcastReceiver, mIntentFilter);
-        mLocalBroadcastManager.registerReceiver(mSWBroadcastReceiver, mIntentFilter);
-        mLocalBroadcastManager.registerReceiver(mWarningBroadcastReceiver, mIntentFilter);
-        mLocalBroadcastManager.registerReceiver(mPeaceBroadcastReceiver, mIntentFilter);
+        mLocalBroadcastManager.registerReceiver(mLostBroadcastReceiver, intentFilter);
+        mLocalBroadcastManager.registerReceiver(mSWBroadcastReceiver, intentFilter);
+        mLocalBroadcastManager.registerReceiver(mWarningBroadcastReceiver, intentFilter);
+        mLocalBroadcastManager.registerReceiver(peaceBroadcastReceiver, intentFilter);
 
 
         timerFlash.schedule(timerFlashTask,0,3000);//刷新网络
-        //timerChanged.schedule(timerChangedTask,0,5000);
-       //getApplicationContext();
 
+        mDrawerLayout.addDrawerListener(new DrawerLayout.DrawerListener() {
+            @Override
+            public void onDrawerSlide(@NonNull View drawerView, float slideOffset) {
+            }
+
+            @Override
+            public void onDrawerOpened(@NonNull View drawerView) {
+            }
+
+            @Override
+            public void onDrawerClosed(@NonNull View drawerView) {
+                loadChoice();
+            }
+
+            @Override
+            public void onDrawerStateChanged(int newState) {
+            }
+        });
+    }
+
+    private void loadChoice(){
+        //测试按键
+        AlertDialog.Builder builder = new AlertDialog.Builder(BaseActivity.this);
+        builder.setTitle("检测到存档，是否继承上一次的数据？")
+                .setIcon(R.drawable.ic_attention)
+                .setNegativeButton("取消", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.dismiss();
+                    }
+                });
+        builder.setPositiveButton("确定", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                EXTEND_LEGACY = true;
+                loadingClick();
+            }
+        });
+        builder.show();
+    }
+
+    public void loadingClick(){
+        final PopupWindow popupWindow = new PopupWindow();
+        popupWindow.setHeight(ViewGroup.LayoutParams.WRAP_CONTENT);
+        popupWindow.setWidth(ViewGroup.LayoutParams.WRAP_CONTENT);
+        popupWindow.setFocusable(true);
+        View view = LayoutInflater.from(BaseActivity.this).inflate(R.layout.waiting_activity,null);
+        popupWindow.setContentView(view);
+        popupWindow.showAtLocation(getWindow().getDecorView(), Gravity.CENTER,0,0);
+
+        new Handler().postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        Toast.makeText(BaseActivity.this, "加载成功", Toast.LENGTH_SHORT).show();
+                        popupWindow.dismiss();
+                    }
+                },3000
+        );
     }
 
     public boolean onItemPlusSelected(MenuItem item){
-        switch (item.getItemId()) {
-            case R.id.button_offline_map:// 求救
-                startActivity(new Intent(this,OfflineActivity.class));
-                break;
-
-            case R.id.button_trace:// 轨迹
-                getCurrentTime();
-                TrackdialogChoice();
-
-                break;
-
-            case R.id.button_num:// 编号
-                //测试按键
-                final EditText inputServer = new EditText(BaseActivity.this);
-                AlertDialog.Builder builder = new AlertDialog.Builder(BaseActivity.this);
-                builder.setTitle("输入本机序号(1~20)")
-                        .setIcon(android.R.drawable.ic_dialog_info)
-                        .setView(inputServer)
-                        .setNegativeButton("取消", new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialog, int which) {
-                                dialog.dismiss();
-                            }
-                        });
-                builder.setPositiveButton("确定", new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int which) {
-                        String text = inputServer.getText().toString();
-                        int buffer = 0;
-                        if(checkStrIsNum02(text)){
-                            buffer = Integer.parseInt(text);
-                            if(buffer > 0 && buffer <= 20){
-                                SELFNUMBER_SETTLED = true;
-                                SelfNumber = buffer;
-//                                button3.setText("本机编号: " + SelfNumber);
-//                                button3.setClickable(false);
-                            }else {
-                                Toast.makeText(BaseActivity.this, "请输入1到20之间的数字！", Toast.LENGTH_SHORT).show();
-                            }
-                        }else {
-                            Toast.makeText(BaseActivity.this, "请输入数字！", Toast.LENGTH_SHORT).show();
+        int itemId = item.getItemId();
+        if (itemId == R.id.button_offline_map) {// 求救
+            startActivity(new Intent(this, OfflineActivity.class));
+        } else if (itemId == R.id.button_trace) {// 轨迹
+            getCurrentTime();
+            TrackdialogChoice();
+        } else if (itemId == R.id.button_num) {// 编号
+            //测试按键
+            final EditText inputServer = new EditText(BaseActivity.this);
+            AlertDialog.Builder builder = new AlertDialog.Builder(BaseActivity.this);
+            builder.setTitle("输入本机序号(1~20)")
+                    .setIcon(android.R.drawable.ic_dialog_info)
+                    .setView(inputServer)
+                    .setNegativeButton("取消", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            dialog.dismiss();
                         }
+                    });
+            builder.setPositiveButton("确定", new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog, int which) {
+                    String text = inputServer.getText().toString();
+                    int buffer;
+                    if (checkStrIsNum02(text)) {
+                        buffer = Integer.parseInt(text);
+                        if (buffer > 0 && buffer <= 20) {
+                            SELFNUMBER_SETTLED = true;
+                            SelfNumber = buffer;
+                        } else {
+                            Toast.makeText(BaseActivity.this, "请输入1到20之间的数字！", Toast.LENGTH_SHORT).show();
+                        }
+                    } else {
+                        Toast.makeText(BaseActivity.this, "请输入数字！", Toast.LENGTH_SHORT).show();
                     }
-                });
-                builder.show();
-                break;
-
-            case R.id.button_heart_rate:// 心率
-                if(!BAND_CONNECTED){
+                }
+            });
+            builder.show();
+        } else if (itemId == R.id.button_heart_rate) {// 心率
+            if (!BAND_CONNECTED) {
                 Intent newIntent = new Intent(BaseActivity.this, DeviceListActivity.class);
                 startActivityForResult(newIntent, REQUEST_SELECT_DEVICE_BAND);
-
-                //button4.setText("心率显示");
-
-            }else {
-                //button4.setText("开启监听");
+            } else {
                 BleCmd06_getData getData = new BleCmd06_getData();
                 setTx_data(getData.onHR());
-                if(timerStartHR != null || timerStartHRTask != null)
+                if (timerStartHR != null || timerStartHRTask != null)
                     stopTimer();
                 //startTimer();
                 //timerStartHR.schedule(timerStartHRTask,0,5000);//心跳检测开启
                 //button4.setClickable(false);
                 dialogChoice();
             }
-                break;
         }
         return true;
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item){
-        switch (item.getItemId()) {
-            case R.id.open:// 打开蓝牙设备
-                if (!mBtAdapter.isEnabled()) {
-                    Intent enableIntent = new Intent(
-                            BluetoothAdapter.ACTION_REQUEST_ENABLE);
-                    startActivityForResult(enableIntent, REQUEST_ENABLE_BT);
-                } else {
-                    Toast.makeText(BaseActivity.this, "蓝牙已打开", Toast.LENGTH_SHORT)
-                            .show();
-                }
-                break;
+        int itemId = item.getItemId();
+        if (itemId == R.id.open) {// 打开蓝牙设备
+            if (!mBtAdapter.isEnabled()) {
+                Intent enableIntent = new Intent(
+                        BluetoothAdapter.ACTION_REQUEST_ENABLE);
+                startActivityForResult(enableIntent, REQUEST_ENABLE_BT);
+            } else {
+                Toast.makeText(BaseActivity.this, "蓝牙已打开", Toast.LENGTH_SHORT)
+                        .show();
+            }
+        } else if (itemId == R.id.scan) {// 扫描设备
+            if (!mBtAdapter.isEnabled()) {
+                Toast.makeText(BaseActivity.this, "未打开蓝牙", Toast.LENGTH_SHORT)
+                        .show();
+            } else if (!SELFNUMBER_SETTLED) {
+                Toast.makeText(BaseActivity.this, "请先设置本机编号！", Toast.LENGTH_SHORT)
+                        .show();
+            } else {
+                Intent serverIntent = new Intent(BaseActivity.this, BlueToothListActivity.class);
+                startActivityForResult(serverIntent, REQUEST_CONNECT_DEVICE);
 
-            case R.id.scan:// 扫描设备
-                if (!mBtAdapter.isEnabled()) {
-                    Toast.makeText(BaseActivity.this, "未打开蓝牙", Toast.LENGTH_SHORT)
-                            .show();
-                } else if(!SELFNUMBER_SETTLED){
-                    Toast.makeText(BaseActivity.this, "请先设置本机编号！", Toast.LENGTH_SHORT)
-                            .show();
+            }
+        } else if (itemId == R.id.disconnect) {// 断开连接
+            if (!CONNECT_STATUS && !BAND_CONNECTED) {
+                Toast.makeText(BaseActivity.this, "无连接", Toast.LENGTH_SHORT)
+                        .show();
+            } else if (CONNECT_STATUS && BAND_CONNECTED) {
+                if (intf == intf_ble_uart) {
+                    mUartService.disconnect();
+                    mUartService.close();
+                    stopTimer();
                 }
-                else {
-                    Intent serverIntent = new Intent(BaseActivity.this, BlueToothListActivity.class);
-                    startActivityForResult(serverIntent, REQUEST_CONNECT_DEVICE);
-
+                cancelconnect();
+                Toast.makeText(BaseActivity.this, "已断开连接", Toast.LENGTH_SHORT)
+                        .show();
+            } else if (CONNECT_STATUS) {
+                cancelconnect();
+                Toast.makeText(BaseActivity.this, "已断开节点连接", Toast.LENGTH_SHORT)
+                        .show();
+            } else if (BAND_CONNECTED) {
+                if (intf == intf_ble_uart) {
+                    //hr_config.clear_config();
+                    mUartService.disconnect();
+                    mUartService.close();
+                    stopTimer();
                 }
-                break;
-
-            case R.id.disconnect:// 断开连接
-                if (!CONNECT_STATUS && !BAND_CONNECTED) {
-                    Toast.makeText(BaseActivity.this, "无连接", Toast.LENGTH_SHORT)
-                            .show();
-                }else if(CONNECT_STATUS && BAND_CONNECTED){
-                    if (intf == intf_ble_uart) {
-                        mUartService.disconnect();
-                        mUartService.close();
-                        stopTimer();
-                    }
-                    cancelconnect();
-                    Toast.makeText(BaseActivity.this, "已断开连接", Toast.LENGTH_SHORT)
-                            .show();
-                }else if(CONNECT_STATUS){
-                    cancelconnect();
-                    Toast.makeText(BaseActivity.this, "已断开节点连接", Toast.LENGTH_SHORT)
-                            .show();
-                }else if(BAND_CONNECTED){
-                    if (intf == intf_ble_uart) {
-                        //hr_config.clear_config();
-                        mUartService.disconnect();
-                        mUartService.close();
-                        stopTimer();
-                    }
-                    Toast.makeText(BaseActivity.this, "已断开手环连接", Toast.LENGTH_SHORT)
-                            .show();
-                }
-                break;
-
-            case R.id.cleandata:// 清除异常数据
-                Snackbar.make(this.mMapView, "是否需要删除错误的历史数据", Snackbar.LENGTH_SHORT)
-                        .setAction("是", new View.OnClickListener() {
-                            @Override
-                            public void onClick(View v) {
-                                LitePal.deleteAll(SelfLocationDatabase.class, "latitude < ? and longitude < ?", "1", "1");
-                                Toast.makeText(BaseActivity.this, "错误数据已清理", Toast.LENGTH_SHORT)
-                                        .show();
-                            }
-                        }).show();
-                break;
-            case android.R.id.home:
-                mDrawerLayout.openDrawer(GravityCompat.START);
-                break;
-            default:
+                Toast.makeText(BaseActivity.this, "已断开手环连接", Toast.LENGTH_SHORT)
+                        .show();
+            }
+        } else if (itemId == R.id.cleandata) {// 清除异常数据
+            Snackbar.make(this.mMapView, "是否需要删除错误的历史数据", Snackbar.LENGTH_SHORT)
+                    .setAction("是", new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            LitePal.deleteAll(SelfLocationDatabase.class, "latitude < ? and longitude < ?", "1", "1");
+                            Toast.makeText(BaseActivity.this, "错误数据已清理", Toast.LENGTH_SHORT)
+                                    .show();
+                        }
+                    }).show();
+        } else if (itemId == android.R.id.home) {
+            mDrawerLayout.openDrawer(GravityCompat.START);
         }
         return true;
     }
@@ -554,20 +580,22 @@ public abstract class BaseActivity extends AppCompatActivity {
                         }
                         if(Integer.parseInt(cutted) <40 && BAND_CONNECTED){
                             if(danger_HR > 4){
-                                //sendNotificationSelf(getApplicationContext());
                                 warnTypes = HR_Warning;
+                                Intent intent = new Intent("com.example.myapplication.SELF_WARN_BROADCAST");
+                                intent.setPackage("com.example.myapplication");
+                                intent.setComponent(new ComponentName(BaseActivity.this, SelfWarningBroadcastReceiver.class));
+                                mLocalBroadcastManager.sendBroadcast(intent);
+                                toolbar.setBackgroundColor(getResources().getColor(R.color.lightgreen));
+                                BE_WARNED = true;
                             }
                             danger_HR++;
                         }else if(Integer.parseInt(cutted) >= 40 && danger_HR > 0){
                             danger_HR--;
                             warnTypes = 0;
+                            BE_WARNED = false;
                         }
 
                     }
-//                    else {
-////                        Tv6.setText("暂无数据");
-////                        Tv6.setGravity(Gravity.CENTER);
-//                    }
                 }
             };
         }
@@ -590,19 +618,15 @@ public abstract class BaseActivity extends AppCompatActivity {
                     switch (items[which]){
                         case "10秒":
                           ScanPeriod = 10000;
-                          //startTimer();
                           break;
                         case "30秒":
                             ScanPeriod = 30000;
-                            //startTimer();
                             break;
                         case "1分钟":
                             ScanPeriod = 60000;
-                            //startTimer();
                             break;
                         case "5分钟":
                             ScanPeriod = 300000;
-                            //startTimer();
                             break;
                     }
 
@@ -612,8 +636,7 @@ public abstract class BaseActivity extends AppCompatActivity {
         builder.setPositiveButton("确定", (dialog, which) -> {
             startTimer();
             dialog.dismiss();
-            Toast.makeText(BaseActivity.this, "确定", Toast.LENGTH_SHORT)
-                    .show();
+            Toast.makeText(BaseActivity.this, "确定", Toast.LENGTH_SHORT).show();
         });
         builder.create().show();
         //startTimer();
@@ -624,10 +647,8 @@ public abstract class BaseActivity extends AppCompatActivity {
      * 单选
      */
     private void TrackdialogChoice() {
-        AlertDialog alert = null;
-        AlertDialog.Builder builder = null;
+        AlertDialog.Builder builder;
         final String[] items = {"一小时", "五小时", "十二小时","一天","全部"};
-        alert = null;
         builder = new AlertDialog.Builder(this);
         builder = builder.setIcon(R.drawable.ic_trace)
                 .setTitle("设置路径复现范围")
@@ -635,41 +656,28 @@ public abstract class BaseActivity extends AppCompatActivity {
                 (dialog, which) -> {
                     switch (items[which]){
                         case "一小时":
-                            //trackSlot = 3600;
                             trackShowup(3600);
-                            Toast.makeText(BaseActivity.this, "监测间隔设置为：" + items[which],
-                                Toast.LENGTH_SHORT).show();
                             break;
                         case "五小时":
-                            //trackSlot = 18000;
                             trackShowup(18000);
                             break;
                         case "十二小时":
-                            //trackSlot = 43200;
                             trackShowup(43200);
                             break;
                         case "一天":
-                            //trackSlot = 86400;
                             trackShowup(86400);
                             break;
                         case "全部":
-                            //trackSlot = 900000000;
                             trackShowup(90000000);
                             break;
                     }
-
                 });
         builder.setPositiveButton("确定", (dialog, which) -> {
                         dialog.dismiss();
-                        //trackShowup(trackSlot);
             Log.d(TAG, "TrackdialogChoice: "+trackSlot);
             startActivity(new Intent(this,TextOverlayActivity.class));
                     });
         builder.create().show();
-        //alert.show();
-        //startTimer();
-
-
     }
 
     public void trackShowup(int trackSlot) {
@@ -703,12 +711,13 @@ public abstract class BaseActivity extends AppCompatActivity {
                 if(HR_DETECTED){
                     Tv6.setText("当前心率：" + cutted +"bpm");
                 }else Tv6.setText("暂无数据");
+            }else if(BAND_CONNECTED){
+                Tv6.setText("手环已连接");
             }
             else{
                 Tv6.setText("手环连接已断开");
             }
-            Tv6.setGravity(Gravity.LEFT);
-
+            Tv6.setGravity(Gravity.START);
         }
     };
     private void stopTimer(){
@@ -865,7 +874,8 @@ public abstract class BaseActivity extends AppCompatActivity {
             if (action.equals(UartService.ACTION_GATT_SERVICES_DISCOVERED)) {
                 mUartService.enableTXNotification();
                 try {
-                    Thread.currentThread().sleep(400);
+                    Thread.currentThread();
+                    Thread.sleep(400);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
@@ -880,12 +890,13 @@ public abstract class BaseActivity extends AppCompatActivity {
             if (action.equals(UartService.DEVICE_DOES_NOT_SUPPORT)) {
                 mUartService.disconnect();
                 try {
-                    Thread.currentThread().sleep(100);
+                    Thread.currentThread();
+                    Thread.sleep(100);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
                 mUartService.close();
-                if(hr_config.isValid() == true)
+                if(hr_config.isValid())
                 {
                     mUartService.connect(mDevice.getAddress());
                 }
@@ -1023,6 +1034,7 @@ public abstract class BaseActivity extends AppCompatActivity {
             }
         }
     }
+
     Runnable runnableUi = new Runnable(){
         @Override
         public void run() {
@@ -1033,11 +1045,10 @@ public abstract class BaseActivity extends AppCompatActivity {
             else{
                 Tv5.setText("节点数：" + TotalNumber + " 邻居数：" + NeighborNumber +" 丢失数："+ UnconnectableNumber);
             }
-            Tv5.setGravity(Gravity.LEFT);
+            Tv5.setGravity(Gravity.START);
 
         }
     };
-
 
     public Timer timerFlash = new Timer();
     public TimerTask timerFlashTask = new TimerTask() {
@@ -1051,23 +1062,34 @@ public abstract class BaseActivity extends AppCompatActivity {
         }
     };
 
-    public Runnable runnableUi2_1 = new Runnable(){
+    public Runnable runnableUiBlue = new Runnable(){
         @Override
         public void run() {
             //更新界面
             toolbar.setBackgroundColor(getResources().getColor(dodgerblue));
         }
     };
+    public Runnable runnableUiYellow =new Runnable(){
+        @Override
+        public void run() {
+            toolbar.setBackgroundColor(getResources().getColor(R.color.gold));
+        }
+    };
+    public Runnable runnableUiRed = new Runnable(){
+        @Override
+        public void run() {
+            //更新界面
+            toolbar.setBackgroundColor(getResources().getColor(R.color.red));
+        }
+    };
 
     public class WarningBroadcastReceiver extends BroadcastReceiver{
         @Override
         public void onReceive(Context context, Intent intent) {
-            if(intent.getAction().equals("com.example.myapplication.WARNING_BROADCAST"))
-            {
+            if(intent.getAction().equals("com.example.myapplication.WARNING_BROADCAST")) {
                 int dangerNode = intent.getIntExtra("dangerNode",0);
                 sendNotificationOthers(dangerNode);
             }
-
         }
     }
     public class LostBroadcastReceiver extends BroadcastReceiver{
@@ -1088,7 +1110,7 @@ public abstract class BaseActivity extends AppCompatActivity {
         @Override
         public void onReceive(Context context, Intent intent) {
             if(intent.getAction().equals("com.example.myapplication.PEACE_BROADCAST"))
-                handler.post(runnableUi2_1);
+                handler.post(runnableUiBlue);
         }
     }
 
@@ -1166,7 +1188,7 @@ public abstract class BaseActivity extends AppCompatActivity {
                         .build();
 
             }else  {
-                NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this)
+                NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this, id2)
                         .setContentTitle("提醒")
                         .setContentText("节点" + dangerNode + "发出警报")
                         .setSmallIcon(R.drawable.ic_launcher)
@@ -1220,61 +1242,6 @@ public abstract class BaseActivity extends AppCompatActivity {
         notificationManager.notify(NotificationId3, notification);
     }
 
-    public Runnable runnableUiYellow =new Runnable(){
-        @Override
-        public void run() {
-            toolbar.setBackgroundColor(getResources().getColor(R.color.gold));
-        }
-    };
-    public Runnable runnableUiRed = new Runnable(){
-        @Override
-        public void run() {
-            //更新界面
-            toolbar.setBackgroundColor(getResources().getColor(R.color.red));
-        }
-    };
-
-//    public Timer timerChanged = new Timer();
-//    public TimerTask timerChangedTask = new TimerTask() {
-//        @Override
-//        public void run() {
-//            getCurrentTime();
-//            int now = 0;
-//            try {
-//                now = Integer.parseInt( dateToStamp(format));
-//            } catch (ParseException e) {
-//                e.printStackTrace();
-//            }
-//            if(warnTypes != 0 && ColorChangedTime != 0){
-//                int finalNow = now;
-//                new Thread(){
-//                        public void run(){
-//                            try {
-//                                Thread.sleep(10000);
-//                                if(ColorChangedTime+10 < finalNow)
-//                                {
-//                                    handler.post(runnableUi2_1);
-//                                    warnTypes = 0;
-//                                    getWarnedTypes = 0;
-//                                }
-//                            } catch (InterruptedException e) {
-//                                e.printStackTrace();
-//                            }
-//
-//
-//                        }
-//                    }.start();
-//            }
-//            if (!GET_WARNED){
-//                new Thread(){
-//                    public void run(){
-//                        handler.post(runnableUi2_1);
-//                        getWarnedTypes = 0;
-//                    }
-//                }.start();
-//            }
-//        }
-//    };
 
 
     // 取消链接
@@ -1317,18 +1284,8 @@ public abstract class BaseActivity extends AppCompatActivity {
         //timerChanged.cancel();
         stopTimer();
         super.onDestroy();
-        try {
-            LocalBroadcastManager.getInstance(this).unregisterReceiver(
-                    UARTStatusChangeReceiver);
-        } catch (Exception ignore) {
-            Log.e(TAG, ignore.toString());
-        }
-
-        try {
-            unbindService(mServiceConnection);
-        } catch (Exception ignore) {
-            Log.e(TAG, ignore.toString());
-        }
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(UARTStatusChangeReceiver);
+        unbindService(mServiceConnection);
         if (mUartService != null) {
             mUartService.stopSelf();
             mUartService = null;
