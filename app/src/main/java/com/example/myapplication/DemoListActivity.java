@@ -17,8 +17,9 @@ import com.tbruyelle.rxpermissions2.RxPermissions;
 
 public class DemoListActivity extends ListActivity {
 
-    private ClassAndName[] datas = {
+    private final ClassAndName[] datas = {
             new ClassAndName(LocationActivity.class,"主程序"),
+            new ClassAndName(LoginActivity.class,"登录程序测试"),
             new ClassAndName(MainActivity.class,"基础标记显示"),
             new ClassAndName(TextOverlayActivity.class,"文字覆盖物"),
             //new ClassAndName(MarkerOverlayActivity.class,"标志覆盖物"),

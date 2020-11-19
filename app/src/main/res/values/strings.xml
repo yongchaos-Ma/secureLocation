@@ -76,4 +76,10 @@
     <string name="menu_disconnect">Disconnect</string>
     <string name="menu_scan">Scan</string>
     <string name="menu_stop">Stop</string>
+
+    <string name="hint_username">请输入用户名：</string>
+    <string name="hint_password">请输入密码：</string>
+    <string name="checkbox_re">记住密码</string>
+    <string name="regist">注册</string>
+    <string name="button_confirm">登录</string>
 </resources>
