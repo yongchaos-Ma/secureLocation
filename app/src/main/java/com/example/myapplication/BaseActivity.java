@@ -589,7 +589,7 @@ public abstract class BaseActivity extends AppCompatActivity {
                                 BE_WARNED = true;
                             }
                             danger_HR++;
-                        }else if(Integer.parseInt(cutted) >= 40 && danger_HR > 0){
+                        }else if(BAND_CONNECTED && Integer.parseInt(cutted) >= 40 && danger_HR > 0 && warnTypes != 1){
                             danger_HR--;
                             warnTypes = 0;
                             BE_WARNED = false;

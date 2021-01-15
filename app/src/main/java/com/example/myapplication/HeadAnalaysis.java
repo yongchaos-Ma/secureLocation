@@ -34,7 +34,6 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static com.example.myapplication.BaseActivity.GET_WARNED;
 import static com.example.myapplication.BaseActivity.ReceiveLatitude;
 import static com.example.myapplication.BaseActivity.ReceiveLongitude;
 import static com.example.myapplication.BaseActivity.ReceiveSerialNumber;
@@ -102,32 +101,35 @@ public class HeadAnalaysis {
         }
         readStr = readStr.replace("#", "");
         readStr = readStr.replace("*", "");
+        readStr = readStr.replace(" ", "");
         String[] readStrArray = readStr.split(",");
         if(checkStrIsNum02(readStrArray[0])){
             if(Integer.parseInt(readStrArray[0]) < 20 && Integer.parseInt(readStrArray[0]) != SelfNumber){
                 ReceiveSerialNumber = Integer.parseInt(readStrArray[0]);
             }else
                 WRONG_RECEIVED = true;
-        }else
-            WRONG_RECEIVED = true;
-        if(checkStrIsNum02(readStrArray[1]) && checkStrIsNum02(readStrArray[2])){
-            ReceiveLatitude = Double.parseDouble(readStrArray[1]);
-            ReceiveLongitude = Double.parseDouble(readStrArray[2]);
-        }else
-            WRONG_RECEIVED = true;
-        if(!WRONG_RECEIVED){
-            ReceivedTime = Integer.parseInt(dateToStamp(format));
+            if(checkStrIsNum02(readStrArray[1]) && checkStrIsNum02(readStrArray[2])){
+                ReceiveLatitude = Double.parseDouble(readStrArray[1]);
+                ReceiveLongitude = Double.parseDouble(readStrArray[2]);
+            }else
+                WRONG_RECEIVED = true;
+            if(!WRONG_RECEIVED){
+                ReceivedTime = Integer.parseInt(dateToStamp(format));
 
-            if(readStrArray[3].equals("sos0") || readStrArray[3].equals("sos1") ||
-                    readStrArray[3].equals("sos2") || readStrArray[3].equals("sos3")){
-                alertNum = Integer.parseInt(readStrArray[3].replace("sos", ""));
-                getWarnedTypes = alertNum;
-                if(alertNum != 0) {
-                    GET_WARNED = true;
+                if(readStrArray[3].equals("sos0") || readStrArray[3].equals("sos1") ||
+                        readStrArray[3].equals("sos2") || readStrArray[3].equals("sos3")){
+                    alertNum = Integer.parseInt(readStrArray[3].replace("sos", ""));
+                    getWarnedTypes = alertNum;
+//                    if(alertNum != 0) {
+//                        GET_WARNED = true;
+//                    }
+                    storage(ReceiveSerialNumber);
                 }
-                storage(ReceiveSerialNumber);
             }
-        }
+        }else
+            WRONG_RECEIVED = true;
+//        .
+
     }
     private static final Pattern NUMBER_PATTERN = Pattern.compile("-?[0-9]+(\\.[0-9]+)?");
     /**

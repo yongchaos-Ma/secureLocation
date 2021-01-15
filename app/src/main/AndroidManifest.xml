@@ -28,16 +28,16 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-
+        <activity android:name=".StorageChooseActivity"></activity>
         <!-- android:requestLegacyExternalStorage="true" -->
         <meta-data
             android:name="com.baidu.lbsapi.API_KEY"
             android:value="nuCmvvFojiaPpak1kPtSSLTl6L1fYOPe" />
 
-        <activity
-            android:name=".DemoListActivity"/>
+        <activity android:name=".DemoListActivity" />
         <activity android:name=".MainActivity" />
-        <activity android:name=".LoginActivity"
+        <activity
+            android:name=".LoginActivity"
             android:label="@string/app_name">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

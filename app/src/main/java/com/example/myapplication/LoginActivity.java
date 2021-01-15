@@ -105,7 +105,7 @@ public class LoginActivity extends AppCompatActivity {
             editor.putString("name",secreat_name);
             editor.putString("password", secreat_password);
             editor.putBoolean("flag", flag);
-            editor.commit();
+            editor.apply();
         }
         else{
             editor.clear();
@@ -120,7 +120,7 @@ public class LoginActivity extends AppCompatActivity {
         SharedPreferences sharedPreferences = LoginActivity.this.getSharedPreferences("ACCOUNT_REMEMBER", MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPreferences.edit();
         editor.clear();
-        editor.commit();
+        editor.apply();
     }
     private void initLogin()
     {

@@ -73,7 +73,7 @@ public class UserData {
         SharedPreferences sp=mcontext.getSharedPreferences("config",Context.MODE_PRIVATE);
         SharedPreferences.Editor editor=sp.edit();
         editor.putString(key,mJsonArray.toString());
-        editor.commit();
+        editor.apply();
     }
     private void readData(String key)//sharedpreferences从本地读取数据
     {
@@ -107,7 +107,7 @@ public class UserData {
         SharedPreferences preferences = mcontext.getSharedPreferences("config", Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = preferences.edit();
         editor.clear();
-        editor.commit();
+        editor.apply();
     }
 
 }

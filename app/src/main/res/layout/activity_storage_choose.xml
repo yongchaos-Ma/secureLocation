@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:paddingTop="100dp"
+    android:paddingLeft="20dp"
+    android:paddingRight="20dp"
+    android:background="@drawable/im_background">
+    <Button
+        android:id="@+id/bt_storage_1"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:lines="1"
+        android:text="存档1"
+        android:layout_marginTop="10dp"
+        android:textColorHint="@color/white"
+        android:textColor="@color/white" />
+    <Button
+        android:id="@+id/bt_storage_2"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:lines="1"
+        android:text="存档2"
+        android:layout_marginTop="10dp"
+        android:layout_below="@id/bt_storage_1"
+        android:textColor="@color/white"
+        android:textColorHint="@color/white"/>
+    <Button
+        android:id="@+id/bt_storage_3"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:lines="1"
+        android:text="存档3"
+        android:layout_marginTop="10dp"
+        android:layout_below="@id/bt_storage_2"
+        android:textColor="@color/white"
+        android:textColorHint="@color/white"/>
+    <Button
+        android:id="@+id/bt_storage_4"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:lines="1"
+        android:text="存档4"
+        android:layout_marginTop="10dp"
+        android:layout_below="@id/bt_storage_3"
+        android:textColor="@color/white"
+        android:textColorHint="@color/white"/>
+    <Button
+        android:id="@+id/bt_storage_5"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:lines="1"
+        android:text="存档5"
+        android:layout_marginTop="10dp"
+        android:layout_below="@id/bt_storage_4"
+        android:textColor="@color/white"
+        android:textColorHint="@color/white"/>
+
+
+    <Button
+        android:id="@+id/btn_confirm"
+        android:layout_width="300dp"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/bt_storage_5"
+        android:layout_marginTop="35dp"
+
+        android:text="@string/button_confirm"
+        android:layout_centerHorizontal="true"
+        android:textColor="@color/white" />
+
+
+    <ImageButton
+        android:id="@+id/im_qq"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        android:src="@drawable/ic_qq"
+        android:scaleType="fitCenter"/>
+
+</RelativeLayout>

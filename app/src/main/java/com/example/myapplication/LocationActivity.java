@@ -469,7 +469,7 @@ public class LocationActivity extends BaseActivity {
     final TimerTask task = new TimerTask() {
         @Override
         public void run() {
-            BE_WARNED = false;
+            //BE_WARNED = false;
             int allNum = 0;
             int lostNum = 0;
             baiduMap.clear();
@@ -496,13 +496,13 @@ public class LocationActivity extends BaseActivity {
                                 }
                                 else if(NodeInfors.get(0).getWarnType() != 0){
                                     options.icon(mapWarningNodePics.get(nodeNum));
-                                    if(GET_WARNED){
+                                    //if(GET_WARNED){
                                         Intent intent = new Intent("com.example.myapplication.WARNING_BROADCAST");
                                         intent.setPackage("com.example.myapplication");
                                         intent.putExtra("dangerNode", nodeNum);
                                         mLocalBroadcastManager.sendBroadcast(intent);
                                         BE_WARNED = true;
-                                    }
+                                    //}
                                 } else if(NodeInfors.get(0).isDirect())
                                     options.icon(mapNodePics.get(nodeNum));
                                 else if(!NodeInfors.get(0).isDirect())
@@ -529,8 +529,12 @@ public class LocationActivity extends BaseActivity {
                 mLocalBroadcastManager.sendBroadcast(intent);
                 warnTypes = EDGE_WARNING;
                 BE_WARNED = true;
+            }else//if(warnTypes == EDGE_WARNING)
+            {
+                warnTypes = 0;
+                BE_WARNED = false;
             }
-            if(!BE_WARNED){
+            if(!BE_WARNED ){
                 Intent intent = new Intent("com.example.myapplication.PEACE_BROADCAST");
                 intent.setPackage("com.example.myapplication");
                 mLocalBroadcastManager.sendBroadcast(intent);
@@ -566,29 +570,35 @@ public class LocationActivity extends BaseActivity {
                     e.printStackTrace();
                 }
             }
-            new Thread(new Thread()).start();
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        Thread.sleep(3000);//延时1s
-                        //do something
-                        if (CONNECT_STATUS && warnTypes != 0) {
-                            String WarningMessage = "!" + SelfNumber + "," + "sos" + warnTypes + "," + "\n";
-                            WarningMessage = WarningMessage.replace("\\n","\n");
-                            warningBuffer = WarningMessage.getBytes();
-                            try {
-                                mmOutStream = mmSocket.getOutputStream();
-                                mmOutStream.write(warningBuffer);
-                            } catch (IOException e) {
-                                e.printStackTrace();
+            if(warnTypes != 0){
+                new Thread(new Thread()).start();
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            //int num = warnTypes;
+                            Thread.sleep(3000);//延时1s
+                            //do something
+                            // storage: && num != 0
+                            if (CONNECT_STATUS ) {
+                                System.out.println("warn " + warnTypes);
+                                String WarningMessage = "!" + SelfNumber + "," + "sos" + warnTypes + "," + "\n";
+                                WarningMessage = WarningMessage.replace("\\n","\n");
+                                warningBuffer = WarningMessage.getBytes();
+                                try {
+                                    mmOutStream = mmSocket.getOutputStream();
+                                    mmOutStream.write(warningBuffer);
+                                } catch (IOException e) {
+                                    e.printStackTrace();
+                                }
                             }
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
                         }
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
                     }
-                }
-            }).start();
+                }).start();
+            }
+
 
         }
     };
