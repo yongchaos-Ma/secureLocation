@@ -331,7 +331,15 @@ public abstract class BaseActivity extends AppCompatActivity {
 
             @Override
             public void onDrawerClosed(@NonNull View drawerView) {
-                loadChoice();
+                if(!EXTEND_LEGACY){
+                    loadChoice();
+                }
+//                if(!SELFNUMBER_SETTLED){
+//                    loadChoice();
+//                    EXTEND_LEGACY = true;
+//                    loadingClick();
+//                }
+
             }
 
             @Override
@@ -675,7 +683,7 @@ public abstract class BaseActivity extends AppCompatActivity {
         builder.setPositiveButton("确定", (dialog, which) -> {
                         dialog.dismiss();
             Log.d(TAG, "TrackdialogChoice: "+trackSlot);
-            startActivity(new Intent(this,TextOverlayActivity.class));
+            //startActivity(new Intent(this,TextOverlayActivity.class));
                     });
         builder.create().show();
     }
@@ -1280,6 +1288,7 @@ public abstract class BaseActivity extends AppCompatActivity {
     protected void onDestroy() {
         //在activity执行onDestroy时执行mMapView.onDestroy()，实现地图生命周期管理
         mMapView.onDestroy();
+        points.clear();
         timerFlash.cancel();
         //timerChanged.cancel();
         stopTimer();

@@ -20,6 +20,8 @@ import com.baidu.mapapi.map.MapStatusUpdateFactory;
 import com.baidu.mapapi.map.MarkerOptions;
 import com.baidu.mapapi.map.MyLocationConfiguration;
 import com.baidu.mapapi.map.MyLocationData;
+import com.baidu.mapapi.map.OverlayOptions;
+import com.baidu.mapapi.map.PolylineOptions;
 import com.baidu.mapapi.model.LatLng;
 import com.example.myapplication.everyonelitepal.Node1;
 import com.example.myapplication.everyonelitepal.Node10;
@@ -539,17 +541,17 @@ public class LocationActivity extends BaseActivity {
                 intent.setPackage("com.example.myapplication");
                 mLocalBroadcastManager.sendBroadcast(intent);
             }
-//            if(!points.isEmpty()){
-//                OverlayOptions mOverlayOptions = new PolylineOptions()
-//                        .width(10)
-//                        .color(0xAAFF0000)
-//                        .points(points)
-//                        .dottedLine(true)
-//                        ;
-//                //在地图上绘制折线
-//                baiduMap.addOverlay(mOverlayOptions);
-//                Log.d(TAG, points.get(0).toString());
-//            }
+            if(!points.isEmpty()){
+                OverlayOptions mOverlayOptions = new PolylineOptions()
+                        .width(10)
+                        .color(0xAAFF0000)
+                        .points(points)
+                        .dottedLine(true)
+                        ;
+                //在地图上绘制折线
+                baiduMap.addOverlay(mOverlayOptions);
+                Log.d(TAG, points.get(0).toString());
+            }
 
         }
 
