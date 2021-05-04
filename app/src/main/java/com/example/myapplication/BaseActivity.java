@@ -1,11 +1,13 @@
 package com.example.myapplication;
 
+import android.Manifest;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
+import android.app.ProgressDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
@@ -16,10 +18,10 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
-import android.content.res.ColorStateList;
-import android.graphics.PorterDuff;
+import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.IBinder;
 import android.text.TextUtils;
@@ -30,6 +32,8 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.Window;
+import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.PopupWindow;
@@ -40,7 +44,9 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+import androidx.core.app.ActivityCompat;
 import androidx.core.app.NotificationCompat;
+import androidx.core.content.ContextCompat;
 import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
@@ -56,9 +62,19 @@ import com.example.myapplication.power_individual_demo.BleNotifyParse;
 import com.example.myapplication.power_individual_demo.Config;
 import com.example.myapplication.power_individual_demo.DeviceListActivity;
 import com.example.myapplication.power_individual_demo.UartService;
-import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.getbase.floatingactionbutton.FloatingActionButton;
+import com.getbase.floatingactionbutton.FloatingActionsMenu;
 import com.google.android.material.navigation.NavigationView;
 import com.google.android.material.snackbar.Snackbar;
+import com.iflytek.cloud.ErrorCode;
+import com.iflytek.cloud.InitListener;
+import com.iflytek.cloud.RecognizerListener;
+import com.iflytek.cloud.RecognizerResult;
+import com.iflytek.cloud.SpeechConstant;
+import com.iflytek.cloud.SpeechError;
+import com.iflytek.cloud.SpeechRecognizer;
+import com.iflytek.cloud.ui.RecognizerDialog;
+import com.iflytek.cloud.util.ResourceUtil;
 
 import org.litepal.LitePal;
 
@@ -81,8 +97,9 @@ import static com.example.myapplication.GetTime.dateToStamp;
 import static com.example.myapplication.GetTime.format;
 import static com.example.myapplication.GetTime.getCurrentTime;
 import static com.example.myapplication.R.color.dodgerblue;
-import static com.example.myapplication.R.color.orange;
-import static com.example.myapplication.R.color.red;
+
+//import com.google.android.material.floatingactionbutton.FloatingActionButton;
+//import com.google.gson.JsonParser;
 
 
 public abstract class BaseActivity extends AppCompatActivity {
@@ -93,27 +110,37 @@ public abstract class BaseActivity extends AppCompatActivity {
     private DrawerLayout mDrawerLayout;
     //下面四个是用来测试项目的坐标，真实开发中应该用蓝牙进行获取真实坐标
     public static LatLng xupt = new LatLng(34.1606259200,108.9074823500);
-    public static LatLng ssd = new LatLng(34.1623459200,108.9374826500);
-    public static LatLng xqzf = new LatLng(34.1602259300,108.9074323600);
-    public static LatLng xxx = new LatLng(34.1602569300,108.9077783600);
+//    public static LatLng ssd = new LatLng(34.1623459200,108.9374826500);
+//    public static LatLng xqzf = new LatLng(34.1602259300,108.9074323600);
+//    public static LatLng xxx = new LatLng(34.1602569300,108.9077783600);
+    //GPS信息
+    public double latitude = 0.0;    //获取纬度信息
+    public double longitude = 0.0;    //获取经度信息
+    public double accuracy = 0.0;
+    public double direction = 0.0;
     //按键
+    public LatLng targetPosition;
     public Button button1;
     public Button button2;
     public Button button3;
     public Button button4;
+    public Button button5;
     public Toolbar toolbar;
     public TextView Tv5;
     public TextView Tv6;
     public NavigationView navView;
     public View headview;
     public CircleImageView headImage;
+    public FloatingActionButton fab;
+    FloatingActionButton floatingActionButton1, floatingActionButton2, floatingActionButton3;
+    FloatingActionsMenu floatingActionMenu;
     //蓝牙菜单
     private static final int REQUEST_CONNECT_DEVICE = 1;
     private static final int REQUEST_ENABLE_BT = 2;
-    public static final UUID MY_UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
-    public static BluetoothSocket mmSocket;
-    public static OutputStream mmOutStream;
-    public static InputStream mmInStream;
+    public  final UUID MY_UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
+    public  BluetoothSocket mmSocket;
+    public  OutputStream mmOutStream;
+    public  InputStream mmInStream;
 
     public static double ReceiveLatitude = 0.0;
     public static double ReceiveLongitude = 0.0;
@@ -128,6 +155,7 @@ public abstract class BaseActivity extends AppCompatActivity {
     public static BluetoothAdapter mBtAdapter;
 
     public static List<LatLng> points = new ArrayList<>();
+    public static List<LatLng> fencePoints = new ArrayList<>();
     public static int SelfNumber = 0;
     public int WarnOthers = 1;
     public int EDGE_WARNING = 2;
@@ -173,16 +201,29 @@ public abstract class BaseActivity extends AppCompatActivity {
     int ScanPeriod = 10000;
     public int trackSlot = 0;
     final int[] p = {1};
+    final int[] q = {1};
 
     public LocalBroadcastManager mLocalBroadcastManager;
     private WarningBroadcastReceiver mWarningBroadcastReceiver;
     private LostBroadcastReceiver mLostBroadcastReceiver;
     private SelfWarningBroadcastReceiver mSWBroadcastReceiver;
 
+    protected static String recordMessage = null;
+    private final RecognizerDialog iatDialog=null;
+    private SpeechRecognizer recognizer=null;
+    // 本地语法构建路径
+    private final String grmPath = Environment.getExternalStorageDirectory()
+            .getAbsolutePath() + "/msc/test";
+    //新增对话框和语音听写完成标志------------------
+    private ProgressDialog pDialog=null;
+    private boolean recordIsFinish=false;
+    //-----------------------------------
+
     //@RequiresApi(api = Build.VERSION_CODES.M)
     @Override
     protected final void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
         LitePal.initialize(this);
 
         setContentView(R.layout.activity_main);
@@ -190,13 +231,20 @@ public abstract class BaseActivity extends AppCompatActivity {
         button2 = findViewById(R.id.button_trace);
         button3 = findViewById(R.id.button_num);
         button4 = findViewById(R.id.button_heart_rate);
+        button5 = findViewById(R.id.ic_fence);
         toolbar = findViewById(R.id.toolbar);
         Tv5 = findViewById(R.id.Tv_net_info);
         Tv6 = findViewById(R.id.hr_info);
         toolbar.inflateMenu(R.menu.main);
+        mDrawerLayout = findViewById(R.id.drawer_layout);
+        navView = findViewById(R.id.nav_view);
+        headview = navView.inflateHeaderView(R.layout.nav_header);
+        headImage = headview.findViewById(R.id.icon_image);
+        //fab = findViewById(R.id.fab);
 
-        mLocalBroadcastManager = LocalBroadcastManager.getInstance(this);
-
+        floatingActionMenu = findViewById(R.id.fab_menu);
+        floatingActionButton1 = findViewById(R.id.fab_action_a);
+        floatingActionButton2 = findViewById(R.id.fab_action_b);
 
         mMapView = findViewById(R.id.bmapView);
         //获得地图控制器
@@ -209,12 +257,19 @@ public abstract class BaseActivity extends AppCompatActivity {
          */
         //设置中心点.MapStatusUpdate放入setMapStatus方法中用来描述即将的变化
         mapStatusUpdate = MapStatusUpdateFactory.newLatLng(xupt);
-        baiduMap.setMapStatus(mapStatusUpdate);
-        handler=new Handler();
-
+        //baiduMap.setMapStatus(mapStatusUpdate);
         //设置缩放级别
         mapStatusUpdate = MapStatusUpdateFactory.zoomTo(17);
         baiduMap.setMapStatus(mapStatusUpdate);
+        mLocalBroadcastManager = LocalBroadcastManager.getInstance(this);
+
+        // 将“12345678”替换成您申请的APPID，申请地址：http://www.xfyun.cn
+        // 请勿在“=”与appid之间添加任何空字符或者转义符
+        // appid 必须和下载的SDK保持一致，否则会出现10407错误
+        // 应用程序入口处调用，避免手机内存过小，杀死后台进程后通过历史intent进入Activity造成SpeechUtility对象为null
+        //SpeechUtility.createUtility(BaseActivity.this, SpeechConstant.APPID +"=600a34da");
+
+        handler=new Handler();
 
         hr_config = new Config(BaseActivity.this);
 
@@ -238,11 +293,96 @@ public abstract class BaseActivity extends AppCompatActivity {
                     + "mserviceValue" + mUartService);
         }
 
-        mDrawerLayout = findViewById(R.id.drawer_layout);
+        init();
+        BroadcastInitial();
+        UiInitial();
+        requestMyPermissions();
+        LitePal.getDatabase();
+        // 初始化语音识别对象
+        Log.d(TAG,"初始化语音对象");
+        recognizer = SpeechRecognizer.createRecognizer(this,mInitListener);
+        if(recognizer==null){
+            Log.e(TAG,"recognizer is null");
+        }
 
-        navView = findViewById(R.id.nav_view);
-        headview = navView.inflateHeaderView(R.layout.nav_header);
-        headImage = headview.findViewById(R.id.icon_image);
+        //timerFlash.schedule(timerFlashTask,0,3000);//刷新网络
+    }
+
+    private void requestMyPermissions() {
+
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH)
+                != PackageManager.PERMISSION_GRANTED)
+        {//没有授权，编写申请权限代码
+            ActivityCompat.requestPermissions(BaseActivity.this, new String[]{Manifest.permission.BLUETOOTH}, 100);
+        } else {
+            Log.d(TAG, "requestMyPermissions: 有蓝牙权限");
+        }
+        if (ContextCompat.checkSelfPermission(this,
+                Manifest.permission.INTERNET)
+                != PackageManager.PERMISSION_GRANTED) {
+            //没有授权，编写申请权限代码
+            ActivityCompat.requestPermissions(BaseActivity.this, new String[]{Manifest.permission.INTERNET}, 100);
+        } else {
+            Log.d(TAG, "requestMyPermissions: 有网络权限");
+        }
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED)
+        {//没有授权，编写申请权限代码
+            ActivityCompat.requestPermissions(BaseActivity.this, new String[]{Manifest.permission.ACCESS_COARSE_LOCATION}, 100);
+        } else {
+            Log.d(TAG, "requestMyPermissions: 有定位权限");
+        }
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED)
+        {//没有授权，编写申请权限代码
+            ActivityCompat.requestPermissions(BaseActivity.this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 100);
+        } else {
+            Log.d(TAG, "requestMyPermissions: 有精准定位权限");
+        }
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
+                != PackageManager.PERMISSION_GRANTED)
+        {//没有授权，编写申请权限代码
+            ActivityCompat.requestPermissions(BaseActivity.this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 100);
+        } else {
+            Log.d(TAG, "requestMyPermissions: 有录音权限");
+        }
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CHANGE_NETWORK_STATE)
+                != PackageManager.PERMISSION_GRANTED)
+        {//没有授权，编写申请权限代码
+            ActivityCompat.requestPermissions(BaseActivity.this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 100);
+        } else {
+            Log.d(TAG, "requestMyPermissions: 有改变网络状态权限");
+        }
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE)
+                != PackageManager.PERMISSION_GRANTED)
+        {//没有授权，编写申请权限代码
+            ActivityCompat.requestPermissions(BaseActivity.this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 100);
+        } else {
+            Log.d(TAG, "requestMyPermissions: 有读取手机状态权限");
+        }
+    }
+
+
+
+    private void BroadcastInitial(){
+        IntentFilter intentFilter = new IntentFilter();
+
+        intentFilter.addAction("com.example.myapplication.LOST_BROADCAST");
+        intentFilter.addAction("com.example.myapplication.SELF_WARN_BROADCAST");
+        intentFilter.addAction("com.example.myapplication.WARNING_BROADCAST");
+        intentFilter.addAction("com.example.myapplication.PEACE_BROADCAST");
+        mLostBroadcastReceiver = new LostBroadcastReceiver();
+        mSWBroadcastReceiver = new SelfWarningBroadcastReceiver();
+        mWarningBroadcastReceiver = new WarningBroadcastReceiver();
+        PeaceBroadcastReceiver peaceBroadcastReceiver = new PeaceBroadcastReceiver();
+
+        mLocalBroadcastManager.registerReceiver(mLostBroadcastReceiver, intentFilter);
+        mLocalBroadcastManager.registerReceiver(mSWBroadcastReceiver, intentFilter);
+        mLocalBroadcastManager.registerReceiver(mWarningBroadcastReceiver, intentFilter);
+        mLocalBroadcastManager.registerReceiver(peaceBroadcastReceiver, intentFilter);
+    }
+
+    private void UiInitial(){
         headImage.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -267,11 +407,8 @@ public abstract class BaseActivity extends AppCompatActivity {
             actionBar.setHomeAsUpIndicator(R.drawable.ic_menu);
 
         }
-        FloatingActionButton fab = findViewById(R.id.fab);
-        fab.setBackgroundTintMode(PorterDuff.Mode.SRC_OVER);
-        fab.setBackgroundTintList(ColorStateList.valueOf(getResources().getColor(orange)));
-        fab.setOnClickListener(new View.OnClickListener() {
-            @Override
+
+        floatingActionButton1.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 if(isOdd(p[0])){
                     //向其他成员发送急救信息
@@ -282,44 +419,37 @@ public abstract class BaseActivity extends AppCompatActivity {
                     mLocalBroadcastManager.sendBroadcast(intent);
                     Toast.makeText(BaseActivity.this,"sos",Toast.LENGTH_LONG).show();
                     toolbar.setBackgroundColor(getResources().getColor(R.color.lightgreen));
-                    fab.setBackgroundTintList(ColorStateList.valueOf(getResources().getColor(red)));
+                    //fab.setBackgroundTintList(ColorStateList.valueOf(getResources().getColor(red)));
                     BE_WARNED = true;
                 }else {
                     //停止呼救
                     warnTypes = 0;
                     toolbar.setBackgroundColor(getResources().getColor(dodgerblue));
-                    fab.setBackgroundTintList(ColorStateList.valueOf(getResources().getColor(orange)));
+                    //fab.setBackgroundTintList(ColorStateList.valueOf(getResources().getColor(orange)));
                     BE_WARNED = false;
                 }
                 p[0]++;
+
+            }
+        });
+        floatingActionButton2.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                if (recognizer!=null){
+                    recognizer.cancel();
+                    recognizer.destroy();
+                }
+                startNoDialogOffline();
+                //显示对话框----------------
+                showProgressDialog();
+                //----------------------
+
             }
         });
 
         Tv6.setText("心率数据");
         Tv6.setGravity(Gravity.START);
-        init();
-        LitePal.getDatabase();
+
         mDrawerLayout.openDrawer(GravityCompat.START);
-
-        IntentFilter intentFilter = new IntentFilter();
-
-        intentFilter.addAction("com.example.myapplication.LOST_BROADCAST");
-        intentFilter.addAction("com.example.myapplication.SELF_WARN_BROADCAST");
-        intentFilter.addAction("com.example.myapplication.WARNING_BROADCAST");
-        intentFilter.addAction("com.example.myapplication.PEACE_BROADCAST");
-        mLostBroadcastReceiver = new LostBroadcastReceiver();
-        mSWBroadcastReceiver = new SelfWarningBroadcastReceiver();
-        mWarningBroadcastReceiver = new WarningBroadcastReceiver();
-        PeaceBroadcastReceiver peaceBroadcastReceiver = new PeaceBroadcastReceiver();
-
-        mLocalBroadcastManager.registerReceiver(mLostBroadcastReceiver, intentFilter);
-        mLocalBroadcastManager.registerReceiver(mSWBroadcastReceiver, intentFilter);
-        mLocalBroadcastManager.registerReceiver(mWarningBroadcastReceiver, intentFilter);
-        mLocalBroadcastManager.registerReceiver(peaceBroadcastReceiver, intentFilter);
-
-
-        timerFlash.schedule(timerFlashTask,0,3000);//刷新网络
-
         mDrawerLayout.addDrawerListener(new DrawerLayout.DrawerListener() {
             @Override
             public void onDrawerSlide(@NonNull View drawerView, float slideOffset) {
@@ -346,30 +476,215 @@ public abstract class BaseActivity extends AppCompatActivity {
             public void onDrawerStateChanged(int newState) {
             }
         });
+
+    }
+
+    //对话框显示方法-----------------------------------
+    private void showProgressDialog() {
+        pDialog = new ProgressDialog(BaseActivity.this);
+
+        pDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
+        pDialog.setProgress(100);
+        pDialog.setMessage("请稍等...");
+        pDialog.setIndeterminate(false);
+        pDialog.show();
+
+        WindowManager.LayoutParams lp = pDialog.getWindow().getAttributes();
+        lp.gravity = Gravity.CENTER;
+        Window win = pDialog.getWindow();
+        win.setAttributes(lp);
+
+        new Thread(new Runnable() {
+
+            @Override
+            public void run() {
+                //long startTime = System.currentTimeMillis();
+                int progress = 0;
+
+                //while (System.currentTimeMillis() - startTime < 1000) {
+                //语音听写完成后，释放对话框
+                while (!recordIsFinish) {
+                    try {
+                        progress += 10;
+                        pDialog.setProgress(progress);
+                        Thread.sleep(100);
+                    } catch (InterruptedException e) {
+                        pDialog.dismiss();
+                    }
+                }
+
+                pDialog.dismiss();
+                recordIsFinish=false;
+            }
+        }).start();
+    }
+//--------------------------------------------------------
+
+    /**
+     * 初始化监听器。
+     */
+    private final InitListener mInitListener = new InitListener() {
+
+        @Override
+        public void onInit(int code) {
+            Log.d("tag", "SpeechRecognizer init() code = " + code);
+            if (code != ErrorCode.SUCCESS) {
+                Log.d("tag", "初始化失败，错误码：" + code);
+            }
+        }
+    };
+
+    private void startNoDialogOffline(){
+        //1.创建SpeechRecognizer对象，第二个参数：本地听写时传InitListener
+        Log.d(TAG,"初始化语音对象(函数内)");
+        recognizer = SpeechRecognizer.createRecognizer(this,mInitListener);
+        if(recognizer==null){
+            Log.e(TAG,"recognizer is null");
+        }
+        //2.设置听写参数
+
+        //设置语法ID和 SUBJECT 为空，以免因之前有语法调用而设置了此参数；或直接清空所有参数，具体可参考 DEMO 的示例。
+        recognizer.setParameter( SpeechConstant.PARAMS, null );
+        recognizer.setParameter( SpeechConstant.SUBJECT, null );
+        //设置返回结果格式，目前支持json,xml以及plain 三种格式，其中plain为纯听写文本内容
+        recognizer.setParameter(SpeechConstant.RESULT_TYPE, "json");
+        //此处engineType为“cloud”
+        recognizer.setParameter( SpeechConstant.ENGINE_TYPE, "local" );
+        //设置语音输入语言，zh_cn为简体中文
+        recognizer.setParameter(SpeechConstant.LANGUAGE, "zh_cn");
+        //设置结果返回语言
+        recognizer.setParameter(SpeechConstant.ACCENT, "mandarin");
+        // 设置语音前端点:静音超时时间，单位ms，即用户多长时间不说话则当做超时处理
+        //取值范围{1000～10000}
+        recognizer.setParameter(SpeechConstant.VAD_BOS, "4000");
+        //设置语音后端点:后端点静音检测时间，单位ms，即用户停止说话多长时间内即认为不再输入，
+        //自动停止录音，范围{0~10000}
+        recognizer.setParameter(SpeechConstant.VAD_EOS, "1000");
+        //设置标点符号,设置为"0"返回结果无标点,设置为"1"返回结果有标点
+        recognizer.setParameter(SpeechConstant.ASR_PTT,"1");
+
+        // 设置本地识别资源
+        recognizer.setParameter(ResourceUtil.ASR_RES_PATH, getResourcePath());
+        // 设置语法构建路径
+        //recognizer.setParameter(ResourceUtil.GRM_BUILD_PATH, grmPath);
+        // 设置本地识别使用语法id
+        //recognizer.setParameter(SpeechConstant.LOCAL_GRAMMAR, "call");
+        // 设置识别的门限值
+        recognizer.setParameter(SpeechConstant.MIXED_THRESHOLD, "30");
+        // 使用8k音频的时候请解开注释
+//			mAsr.setParameter(SpeechConstant.SAMPLE_RATE, "8000");
+        // 设置音频保存路径，保存音频格式支持pcm、wav，设置路径为sd卡请注意WRITE_EXTERNAL_STORAGE权限
+        recognizer.setParameter(SpeechConstant.AUDIO_FORMAT,"wav");
+        recognizer.setParameter(SpeechConstant.ASR_AUDIO_PATH, Environment.getExternalStorageDirectory()+"/msc/asr.wav");
+
+
+        //3.设置回调接口
+        recognizer.startListening(new RecognizerListener() {
+            public IBinder asBinder() {
+                return null;
+            }
+
+            @Override
+            public void onVolumeChanged(int i, byte[] bytes) {
+
+            }
+
+            @Override
+            public void onBeginOfSpeech() {
+
+            }
+
+            @Override
+            public void onEndOfSpeech() {
+
+            }
+
+            @Override
+            public void onResult(RecognizerResult recognizerResult, boolean isLast) {
+                if (isLast) {
+                    String json = recognizerResult.getResultString();
+                    recordMessage = JasonParser.parseIatResult(json);
+                    Log.d("tag",recordMessage);
+                    Intent intent=new Intent(BaseActivity.this,LocationActivity.class);//xxx.class参数是你需要将数据传递的目标页面
+                    //传递基本数据类型
+                    String extraMessage = StringTrans.str2HexStr(recordMessage);
+                    Log.d(TAG, "HexedRun: recordMessage to Hex is:" + extraMessage);
+                    intent.putExtra("recordMessage",extraMessage);
+                    startActivity(intent);
+                    Log.d(TAG, "onResult: recordMessage is: " + recordMessage);
+                    Toast.makeText(BaseActivity.this, recordMessage, Toast.LENGTH_SHORT).show();
+                    //语音听写完成标志---------------------------
+                    recordIsFinish=true;
+                    //------------------------------------------
+                }
+            }
+
+            public void onError(SpeechError speechError) {
+                Log.d("error", speechError.toString());
+            }
+
+
+            @Override
+            public void onEvent(int i, int i1, int i2, Bundle bundle) {
+
+            }
+        });
+    }
+
+    //获取识别资源路径
+    private String getResourcePath(){
+        StringBuffer tempBuffer = new StringBuffer();
+        //识别通用资源
+        tempBuffer.append(ResourceUtil.generateResourcePath(this, ResourceUtil.RESOURCE_TYPE.assets, "iat/common.jet"));
+        tempBuffer.append(";");
+        tempBuffer.append(ResourceUtil.generateResourcePath(this, ResourceUtil.RESOURCE_TYPE.assets, "iat/sms_16k.jet"));
+        return tempBuffer.toString();
     }
 
     private void loadChoice(){
         //测试按键
-        AlertDialog.Builder builder = new AlertDialog.Builder(BaseActivity.this);
-        builder.setTitle("检测到存档，是否继承上一次的数据？")
+        AlertDialog.Builder loadBuilder = new AlertDialog.Builder(BaseActivity.this);
+        loadBuilder.setTitle("检测到存档，是否继承上一次的数据？")
                 .setIcon(R.drawable.ic_attention)
                 .setNegativeButton("取消", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
+                        ChooseNewStorageData();
                         dialog.dismiss();
                     }
                 });
-        builder.setPositiveButton("确定", new DialogInterface.OnClickListener() {
+        loadBuilder.setPositiveButton("确定", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 EXTEND_LEGACY = true;
                 loadingClick();
             }
         });
-        builder.show();
+        loadBuilder.show();
+    }
+    private void ChooseNewStorageData(){
+        //测试按键
+        AlertDialog.Builder newStorageBuilder = new AlertDialog.Builder(BaseActivity.this);
+        newStorageBuilder.setTitle("选择不继承将直接删除之前存储的数据，是否继续？")
+                .setIcon(R.drawable.ic_attention)
+                .setNegativeButton("我再想想", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.dismiss();
+                        loadChoice();
+                    }
+                });
+        newStorageBuilder.setPositiveButton("我确定", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                loadingClick();
+
+            }
+        });
+        newStorageBuilder.show();
     }
 
-    public void loadingClick(){
+    private void loadingClick(){
         final PopupWindow popupWindow = new PopupWindow();
         popupWindow.setHeight(ViewGroup.LayoutParams.WRAP_CONTENT);
         popupWindow.setWidth(ViewGroup.LayoutParams.WRAP_CONTENT);
@@ -388,7 +703,8 @@ public abstract class BaseActivity extends AppCompatActivity {
         );
     }
 
-    public boolean onItemPlusSelected(MenuItem item){
+
+    private void onItemPlusSelected(MenuItem item){
         int itemId = item.getItemId();
         if (itemId == R.id.button_offline_map) {// 求救
             startActivity(new Intent(this, OfflineActivity.class));
@@ -440,8 +756,12 @@ public abstract class BaseActivity extends AppCompatActivity {
                 //button4.setClickable(false);
                 dialogChoice();
             }
+        } else if(itemId == R.id.ic_fence){//围栏
+            setTarget = isOdd(q[0]);
+            q[0]++;
+
         }
-        return true;
+
     }
 
     @Override
@@ -536,8 +856,7 @@ public abstract class BaseActivity extends AppCompatActivity {
                         TextView selfNum = findViewById(R.id.num_and_class);
                         selfNum.setText("自身编号: " + SelfNumber);
                         headImage.setImageResource(R.drawable.imperial_fist);
-//                                button3.setText("本机编号: " + SelfNumber);
-//                                button3.setClickable(false);
+
                     }else {
                         Toast.makeText(BaseActivity.this, "请输入1到20之间的数字！", Toast.LENGTH_SHORT).show();
                     }
@@ -715,6 +1034,11 @@ public abstract class BaseActivity extends AppCompatActivity {
         @Override
         public void run() {
             //更新界面
+            if(setTarget){
+                        View paintTry = new PaintOnMap(BaseActivity.this);
+                        mMapView.addView(paintTry);
+
+            }
             if(!BLE_STOPPED){
                 if(HR_DETECTED){
                     Tv6.setText("当前心率：" + cutted +"bpm");
@@ -1058,17 +1382,18 @@ public abstract class BaseActivity extends AppCompatActivity {
         }
     };
 
-    public Timer timerFlash = new Timer();
-    public TimerTask timerFlashTask = new TimerTask() {
-        @Override
-        public void run() {
-            new Thread(){
-                public void run(){
-                    handler.post(runnableUi);
-                }
-            }.start();
-        }
-    };
+//    public Timer timerFlash = new Timer();
+//    public TimerTask timerFlashTask = new TimerTask() {
+//        @Override
+//        public void run() {
+//            new Thread(){
+//                public void run(){
+//                    handler.post(runnableUi);
+//                    Log.d(TAG, "Timer: record now is " + recordMessage);
+//                }
+//            }.start();
+//        }
+//    };
 
     public Runnable runnableUiBlue = new Runnable(){
         @Override
@@ -1289,7 +1614,7 @@ public abstract class BaseActivity extends AppCompatActivity {
         //在activity执行onDestroy时执行mMapView.onDestroy()，实现地图生命周期管理
         mMapView.onDestroy();
         points.clear();
-        timerFlash.cancel();
+        //timerFlash.cancel();
         //timerChanged.cancel();
         stopTimer();
         super.onDestroy();

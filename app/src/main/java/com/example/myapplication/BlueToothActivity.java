@@ -58,13 +58,13 @@ public class BlueToothActivity extends BaseActivity {
         // 按键1——显示自身位置
         bt_on.setOnClickListener(arg0 -> {
             if (CONNECT_STATUS) {
-                double latdata = LocationActivity.latitude;
-                double longdata = LocationActivity.longitude;
+//                double latdata = LocationActivity.latitude;
+//                double longdata = LocationActivity.longitude;
 //                float accurdata = LocationActivity.accuracy;
 //                float direcdata = LocationActivity.direction;
-                String showloc = latdata + "---" + longdata + "---";
-                showloc = showloc.replace("\\n","\n");
-                tv_lo.setText(showloc);
+//                String showloc = latdata + "---" + longdata + "---";
+//                showloc = showloc.replace("\\n","\n");
+//                tv_lo.setText(showloc);
             } else {
                 Toast.makeText(getApplicationContext(), "请先连接蓝牙", Toast.LENGTH_SHORT).show();
             }
@@ -88,7 +88,7 @@ public class BlueToothActivity extends BaseActivity {
     }
 
     // 发送数据
-    public static void write(String str) {
+    public void write(String str) {
         str = "%" + SelfNumber + "|" + str + "|" +"\n";
         str = str.replace("\\n","\n");
         byte[] buffer = str.getBytes();
@@ -149,7 +149,7 @@ public class BlueToothActivity extends BaseActivity {
                         messagebuffer[messagebytes] = (byte) '\n';
                         messagebytes++;
                         String readStrings = new String(messagebuffer, 0, messagebytes);
-                        if(readStrings.substring(0, 1).equals("%")){
+                        if(readStrings.startsWith("%")){
                             readStrings = readStrings.replace("%","");
                             String[] readStrArray = readStrings.split("//");
                             String ReceivedNum = readStrArray[0];

@@ -17,6 +17,10 @@
             android:id="@+id/button_offline_map"
             android:icon="@drawable/ic_offline_map"
             android:title="Offline Map"/>
+        <item
+            android:id="@+id/ic_fence"
+            android:icon="@drawable/ic_fence"
+            android:title="Fence Demo"/>
     </group>
 
 </menu>

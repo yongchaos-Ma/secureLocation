@@ -49,10 +49,10 @@ import org.litepal.LitePal;
 
 import java.io.IOException;
 import java.text.ParseException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -65,20 +65,26 @@ public class LocationActivity extends BaseActivity {
     public MyLocationListener myListener = new MyLocationListener();
     private NotificationUtils mNotificationUtils;
     private Notification notification;
-    public static double latitude = 0.0;    //获取纬度信息
-    public static double longitude = 0.0;    //获取经度信息
-    public static double accuracy = 0.0;
-    public static double direction = 0.0;
     public static String time = null;
-    public byte[] localizeBuffer;
-    public byte[] warningBuffer;
+    private byte[] localizeBuffer;
+    private byte[] warningBuffer;
+    private byte[] recordBuffer;
     protected MapStatusUpdate mapStatusUpdate;
     public LatLng position;
-    public LatLng targetPosition;
+    private String localizeData = null;
+    private final List<ArcInfo> arc = new ArrayList<>();
+
     public boolean[] MarkerClicked;
     public MarkerOptions options;
 
-    BitmapDescriptor targetIcon = BitmapDescriptorFactory.fromResource(R.drawable.target_icon_neo);
+    private final BitmapDescriptor targetIcon = BitmapDescriptorFactory.fromResource(R.drawable.ic_target);
+    private final BitmapDescriptor footIcon = BitmapDescriptorFactory.fromResource(R.drawable.icon_geo_yellow);
+    private static final BitmapDescriptor startIcon = BitmapDescriptorFactory.fromResource(R.drawable.ic_start);
+    private final BitmapDescriptor textureBlue = BitmapDescriptorFactory.fromResource(R.drawable.icon_road_blue_arrow);
+    private final BitmapDescriptor textureGreen = BitmapDescriptorFactory.fromResource(R.drawable.icon_road_green_arrow);
+    private final BitmapDescriptor textureNoFocus = BitmapDescriptorFactory.fromResource(R.drawable.icon_road_nofocus);
+    private final BitmapDescriptor textureRed = BitmapDescriptorFactory.fromResource(R.drawable.icon_road_red_arrow);
+    private final BitmapDescriptor textureYellow = BitmapDescriptorFactory.fromResource(R.drawable.icon_road_yellow_arrow);
 
     Map<Integer, NodeMother> mapShow = new HashMap<>();
     Map<Integer, BitmapDescriptor> mapNodePics = new HashMap<>();
@@ -185,6 +191,17 @@ public class LocationActivity extends BaseActivity {
     Node18 mNode18 = new Node18();
     Node19 mNode19 = new Node19();
     Node20 mNode20 = new Node20();
+    private final int count = 1;
+    private final OverlayOptions targetMarker = new MarkerOptions();
+    private final OverlayOptions footMarker = new MarkerOptions();
+    private final OverlayOptions startMarker = new MarkerOptions();
+    private final OverlayOptions polyLine = new PolylineOptions();
+    private final LatLng selfLatLng = new LatLng(0.0,0.0);
+    private final LatLng foot = new LatLng(0.0,0.0);
+    private final boolean isVirating = false;
+    private final List<LatLng> polyPoints = new ArrayList<>();
+    boolean In_OR_OUT = true;
+
 
     public class MyLocationListener extends BDAbstractLocationListener {
         //在这个方法中接收定位结果
@@ -232,9 +249,10 @@ public class LocationActivity extends BaseActivity {
             baiduMap.setMyLocationData(locData);
             latitude = location.getLatitude();
             longitude = location.getLongitude();
-            accuracy = location.getRadius();
+//            accuracy = location.getRadius();
             direction = location.getDirection();
-            time = location.getTime();
+            //Toast.makeText(LocationActivity.this,"direction: " + direction,Toast.LENGTH_SHORT).show();
+//            time = location.getTime();
 //            location.getSatelliteNumber();
 //            location.getSpeed();
 
@@ -288,13 +306,6 @@ public class LocationActivity extends BaseActivity {
                 }
 
         }
-    }
-
-    public int createRandom (){
-        Random random = new Random();//默认构造方法
-        int ran = random.nextInt(50);
-        ran = ran * 100;
-        return ran;
     }
 
     public void MapCreate(){
@@ -424,7 +435,7 @@ public class LocationActivity extends BaseActivity {
 
         MyLocationConfiguration config = new MyLocationConfiguration(mode,enableDirection,customMarker);
         baiduMap.setMyLocationConfiguration(config);
-        mMapView.getChildAt(2).setPadding(0,0,47,185);//这是控制缩放控件的位置
+        //mMapView.getChildAt(2).setPadding(0,0,47,185);//这是控制缩放控件的位置
         timerSycLoc.schedule(LocationSycTask, 0, 10000);//定时同步信息
         timer.schedule(task,0,10000);//同步其他点
 
@@ -454,6 +465,7 @@ public class LocationActivity extends BaseActivity {
         notification.defaults = Notification.DEFAULT_SOUND; //设置为默认的声音
 
         baiduMap.setOnMapLongClickListener(listener);
+        //markOnTarget();
 
     }
 
@@ -553,24 +565,205 @@ public class LocationActivity extends BaseActivity {
                 Log.d(TAG, points.get(0).toString());
             }
 
+//            if(targetPosition != null && setTarget){
+//                polyPoints.clear();
+//                if(count == 1 ){
+//                    listener = null;
+//                    ((MarkerOptions) targetMarker).position(targetPosition).icon(targetIcon).yOffset(35);
+//                    selfLatLng = new LatLng(latitude,longitude);
+//                    ((MarkerOptions) startMarker).position(selfLatLng).icon(startIcon);
+//                    fencePoints.add(selfLatLng);
+//                    fencePoints.add(targetPosition);
+//                    DistanceUtil. getDistance(targetPosition, selfLatLng);
+//                    ((PolylineOptions) polyLine).width(20).customTexture(textureBlue).points(fencePoints);
+//                    //在地图上添加Marker，并显示
+//                    baiduMap.addOverlay(targetMarker);
+//                    baiduMap.addOverlay(polyLine);
+//                    Log.d(TAG, "run: Added polyline from " + selfLatLng + "to " + targetPosition);
+//                    count++;
+//                }
+//                else if(count>1) {
+//                    LatLng immediateLatLng = new LatLng(latitude, longitude);
+//                    double distance = LineAndFence.pointToLine(selfLatLng, targetPosition, immediateLatLng);
+//                    //在地图上添加Marker，并显示
+//                    if(!selfLatLng.equals(new LatLng(latitude, longitude)))
+//                        baiduMap.addOverlay(startMarker);
+//                    baiduMap.addOverlay(targetMarker);
+//                    baiduMap.addOverlay(polyLine);
+//                    Log.d(TAG, "run: Added " + count+" polyline from " + selfLatLng + " to " + targetPosition);
+//                    foot = LineAndFence.getFoot(selfLatLng,targetPosition,immediateLatLng);
+//                    ((MarkerOptions) footMarker).position(foot).icon(footIcon);
+//                    //构造CircleOptions对象
+//                    CircleOptions mCircleOptions = new CircleOptions().center(foot)
+//                            .radius(80)
+//                            .fillColor(0x4D0000FF)
+//                            .stroke(new Stroke(5, 0xAA00ff00)); //边框宽和边框颜色.fillColor(0xAA0000FF) //填充颜色
+//
+//
+//                    mCircleOptions.getStroke();
+//                    //在地图上显示圆
+//                    baiduMap.addOverlay(footMarker);
+//                    if(count <= 3)
+//                    baiduMap.addOverlay(mCircleOptions);
+//
+//                        if(setTarget && count > 2){
+//                            for (Integer nodeNum : mapShow.keySet()) {
+//                                if(nodeNum != SelfNumber){
+//                                    String Node = "Node" + nodeNum;
+//                                    Cursor c = LitePal.findBySQL("select * from " + Node);
+//                                    int number = c.getCount();
+//                                    if(number != 0){
+//                                        List<? extends NodeMother> NodeInfors =
+//                                                LitePal.order("time desc").limit(1).find(mapShow.get(nodeNum).getClass());
+//                                        LatLng target = new LatLng(NodeInfors.get(0).getLatitude(),
+//                                                NodeInfors.get(0).getLongitude());
+//
+//                                        LatLng startPoint = ArcInfo.setStartPoint(foot,target);
+//                                        Log.d(TAG, "startPoint: " + startPoint);
+//                                        LatLng endPoint = ArcInfo.setEndPoint(foot,target);
+//                                        Log.d(TAG, "endPoint: " + endPoint);
+//                                        double lat = (foot.latitude + target.latitude)/2;
+//                                        double lon = (foot.longitude + target.longitude)/2;
+//
+//                                        LatLng middlePoint = new LatLng(lat, lon);
+//                                        Log.d(TAG, "middlePoint: " + middlePoint);
+//                                        /**
+//                                         * center 构成圆的中心点
+//                                         * radius 圆的半径
+//                                         * point  待判断点
+//                                         */
+//                                        if(!SpatialRelationUtil.isCircleContainsPoint(foot,80,target)){
+//                                            polyPoints.add(startPoint);
+//                                            polyPoints.add(middlePoint);
+//                                            polyPoints.add(endPoint);
+//                                        }
+//                                    }
+//                                }else
+//                                    Log.d(TAG, "跳过自身");
+//                            }
+//                            LatLng targetStartPoint = ArcInfo.setStartPoint(foot,targetPosition);
+//                            Log.d(TAG, "startPoint: " + targetStartPoint);
+//                            LatLng targetEndPoint = ArcInfo.setEndPoint(foot,targetPosition);
+//                            Log.d(TAG, "endPoint: " + targetEndPoint);
+//                            double lat = (foot.latitude + targetPosition.latitude)/2;
+//                            double lon = (foot.longitude + targetPosition.longitude)/2;
+//                            LatLng targetMiddlePoint = new LatLng(lat, lon);
+//                            Log.d(TAG, "middlePoint: " + targetMiddlePoint);
+//                            if(!SpatialRelationUtil.isCircleContainsPoint(foot,80,targetMiddlePoint)){
+//                                polyPoints.add(targetStartPoint);
+//                                polyPoints.add(targetEndPoint);
+//                                polyPoints.add(targetMiddlePoint);
+//                            }
+//
+//                            LinkedHashSet<LatLng> hashSet = new LinkedHashSet<>(polyPoints);
+//                            ArrayList<LatLng> listWithoutDuplicates = new ArrayList<>(hashSet);
+//                            HashMap<Integer, ArrayList<Object>> mapAll = new HashMap<>();
+//                            for (int i = 0; i < listWithoutDuplicates.size(); i++) {
+//                                //第一个放经纬度 第二个放角度
+//                                ArrayList<Object> objList = new ArrayList<>();
+//                                objList.add(listWithoutDuplicates.get(i));
+//                                objList.add(getAngle1(foot.latitude, foot.longitude,
+//                                        listWithoutDuplicates.get(i).latitude, listWithoutDuplicates.get(i).longitude));
+//                                mapAll.put(i, objList);
+//                            }
+//
+//                            ArrayList<Object> temp = new ArrayList<>();
+//                            int size = mapAll.size();
+//                            for (int i = 0; i < size - 1; i++) {
+//                                for (int j = 0; j < size - 1 - i; j++) {
+//                                    if (Double.parseDouble(mapAll.get(j).get(1).toString()) >
+//                                            Double.parseDouble(mapAll.get(j + 1).get(1).toString()))  //交换两数位置
+//                                    {
+//                                        temp = mapAll.get(j);
+//                                        mapAll.put(j, mapAll.get(j + 1));
+//                                        mapAll.put(j + 1, temp);
+//                                    }
+//                                }
+//                            }
+//
+//                            listWithoutDuplicates.clear();
+//                            for (Integer integer : mapAll.keySet()) {
+//                                if (mapAll.get(integer).get(0) instanceof LatLng) {
+//                                    listWithoutDuplicates.add((LatLng) mapAll.get(integer).get(0));
+//                                }
+//                            }
+//
+//                            //构造PolygonOptions
+//                            PolygonOptions mPolygonOptions = new PolygonOptions()
+//                                    .points(listWithoutDuplicates)
+//                                    .fillColor(0xAAFFFF00) //填充颜色
+//                                    .stroke(new Stroke(5, 0xAA00FF00)); //边框宽度和颜色
+//
+//                            //在地图上显示多边形
+//                            baiduMap.addOverlay(mPolygonOptions);
+//                            //判断点pt是否在位置点列表mPoints构成的多边形内。
+//                            In_OR_OUT = SpatialRelationUtil.isPolygonContainsPoint(listWithoutDuplicates,selfLatLng);
+//                        }
+//
+//
+//                    if(!In_OR_OUT){
+//                        //开启震动
+//                        isVirating = true;
+//                        VirateUtil.vibrate(LocationActivity.this,new long[]{100, 200, 300, 300},-1);
+//                        Looper.prepare();
+//                        Toast.makeText(LocationActivity.this,"请回到正确方向！",Toast.LENGTH_SHORT).show();
+//                        Looper.loop();
+//                    }else {
+//                        if (isVirating) {
+//                            isVirating = false;
+//                            VirateUtil.virateCancle(LocationActivity.this);
+//                            Looper.prepare();
+//                            Toast.makeText(LocationActivity.this,"你正在正确方向上",Toast.LENGTH_SHORT).show();
+//                            Looper.loop();
+//                        }
+//                    }
+//                    count++;
+//                }
+//            }
+
+
         }
 
     };
+
+    /**
+     * @param lat_a 纬度1
+     * @param lng_a 经度1
+     * @param lat_b 纬度2
+     * @param lng_b 经度2
+     * @return
+     */
+    private double getAngle1(double lat_a, double lng_a, double lat_b, double lng_b) {
+
+        double y = Math.sin(lng_b - lng_a) * Math.cos(lat_b);
+        double x = Math.cos(lat_a) * Math.sin(lat_b) - Math.sin(lat_a) * Math.cos(lat_b) * Math.cos(lng_b - lng_a);
+        double brng = Math.atan2(y, x);
+
+        brng = Math.toDegrees(brng);
+        if (brng < 0)
+            brng = brng + 360;
+        return brng;
+    }
 
     public Timer timerSycLoc = new Timer();
     public TimerTask LocationSycTask = new TimerTask() {
         @Override
         public void run() {
+            //String receivedInfo = getIntent().getStringExtra("recordMessage");//接收BaseActivity传递过来的数据
             if (CONNECT_STATUS) {
-                String localizeData = "#" + SelfNumber + "," +LocationActivity.latitude + "," + LocationActivity.longitude + "," + "\n";
+                localizeData = "#" + SelfNumber + "," +latitude + "," + longitude + "," +"\n";
+                Log.d(TAG, "run: localizeData is:" + localizeData);
                 localizeData = localizeData.replace("\\n","\n");
                 localizeBuffer = localizeData.getBytes();
                 try {
+
                     mmOutStream = mmSocket.getOutputStream();
                     mmOutStream.write(localizeBuffer);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
+
+
             }
             if(warnTypes != 0){
                 new Thread(new Thread()).start();
@@ -579,11 +772,11 @@ public class LocationActivity extends BaseActivity {
                     public void run() {
                         try {
                             //int num = warnTypes;
-                            Thread.sleep(3000);//延时1s
+                            Thread.sleep(3000);//延时3s
                             //do something
                             // storage: && num != 0
                             if (CONNECT_STATUS ) {
-                                System.out.println("warn " + warnTypes);
+                                Log.d(TAG, "warn " + warnTypes);
                                 String WarningMessage = "!" + SelfNumber + "," + "sos" + warnTypes + "," + "\n";
                                 WarningMessage = WarningMessage.replace("\\n","\n");
                                 warningBuffer = WarningMessage.getBytes();
@@ -600,20 +793,34 @@ public class LocationActivity extends BaseActivity {
                     }
                 }).start();
             }
-
+            if(recordMessage != null){
+                new Thread(new Thread()).start();
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            Thread.sleep(4000);//延时4s
+                            if (CONNECT_STATUS ) {
+                                //Log.d(TAG, "record: " + recordMessage);
+                                //String receivedMessage = receivedInfo.replace("\n", "");
+                                //receivedMessage = recordMessage + "\n" ;
+                                recordBuffer = recordMessage.getBytes();
+                                try {
+                                    mmOutStream = mmSocket.getOutputStream();
+                                    mmOutStream.write(recordBuffer);
+                                } catch (IOException e) {
+                                    e.printStackTrace();
+                                }
+                            }
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }).start();
+            }
 
         }
     };
-
-//   public void markOnTarget(){
-//        if(targetPosition != null && setTarget){
-//            OverlayOptions option = new MarkerOptions()
-//                    .position(targetPosition)
-//                    .icon(targetIcon);
-//            //在地图上添加Marker，并显示
-//            baiduMap.addOverlay(option);
-//        }
-//    }
 
     private void initLocation(){
 

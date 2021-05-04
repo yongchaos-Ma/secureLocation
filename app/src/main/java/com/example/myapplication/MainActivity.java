@@ -4,15 +4,12 @@ import com.baidu.location.BDAbstractLocationListener;
 import com.baidu.location.BDLocation;
 import com.baidu.location.LocationClient;
 import com.baidu.location.LocationClientOption;
-import com.baidu.mapapi.map.BitmapDescriptor;
-import com.baidu.mapapi.map.BitmapDescriptorFactory;
-import com.baidu.mapapi.map.MyLocationConfiguration;
 import com.baidu.mapapi.map.MyLocationData;
 
 public class MainActivity extends BaseActivity {
 
     public LocationClient mLocationClient = null;
-    private MyLocationListener myListener = new MyLocationListener();
+    private final MyLocationListener myListener = new MyLocationListener();
 
 
     public class MyLocationListener extends BDAbstractLocationListener {
@@ -56,8 +53,8 @@ public class MainActivity extends BaseActivity {
 
         initLocation();
 
-        MarkerOverlayActivity markerOverlayActivity = new MarkerOverlayActivity();
-        markerOverlayActivity.init();
+        //MarkerOverlayActivity markerOverlayActivity = new MarkerOverlayActivity();
+        //markerOverlayActivity.init();
     }
 
     private void initLocation(){

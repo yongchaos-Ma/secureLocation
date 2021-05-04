@@ -1,13 +1,17 @@
 <resources xmlns:android="http://schemas.android.com/apk/res/android">
 
     <!-- Base application theme. -->
-    <style name="AppTheme" parent="Theme.AppCompat.Light.NoActionBar">
+    <style name="BaseTheme" parent="Theme.AppCompat.Light.NoActionBar">
         <!-- Customize your theme here. -->
         <item name="colorPrimary">@color/dodgerblue</item>
-        <item name="colorPrimaryDark">@color/mediumslateblue</item>
-        <item name="colorAccent">@color/coral</item>
+        <item name="colorPrimaryDark">@color/blue</item>
+
         <item name="toolbarNavigationButtonStyle">@style/myToolbarNavigationButtonStyle</item>
         <item name="toolbarStyle">@style/ToolbarLeft</item>
+    </style>
+
+    <style name="AppTheme" parent="BaseTheme">
+
     </style>
 
     <style name="BackgroundOnly">
@@ -23,6 +27,37 @@
         <item name="android:minWidth">0dp</item>
         <item name="android:padding">10dp</item>
         <item name="android:scaleType">centerInside</item>
+    </style>
+
+    <style name="MenuLabelsStyle">
+        <item name="android:background">@drawable/fab_label_background</item>
+        <item name="android:textColor">#FFFFFF</item>
+        <item name="android:textSize">14sp</item>
+        <item name="android:maxLines">2</item>
+        <item name="android:ellipsize">end</item>
+
+    </style>
+
+    <style name="MenuButtonsStyle">
+        <item name="fab_size">mini</item>
+        <item name="fab_colorNormal">#FFB805</item>
+        <item name="fab_colorPressed">#F2AB00</item>
+    </style>
+
+    <style name="MenuButtonsSmall">
+        <item name="fab_size">mini</item>
+        <item name="fab_colorNormal">#1565C0</item>
+        <item name="fab_colorPressed">#2272CD</item>
+    </style>
+
+    <style name="MenuButtonsSmall.Green">
+        <item name="fab_colorNormal">#43A047</item>
+        <item name="fab_colorPressed">#2E7D32</item>
+    </style>
+
+    <style name="MenuButtonsSmall.Red">
+        <item name="fab_colorNormal">#F44336</item>
+        <item name="fab_colorPressed">#C8F44336</item>
     </style>
 
 </resources>

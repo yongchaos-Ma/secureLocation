@@ -9,6 +9,6 @@
     </item>-->
 
     <item android:state_pressed="true">
-        <color android:color="@color/colorAccent" />
+
     </item>
 </selector>
