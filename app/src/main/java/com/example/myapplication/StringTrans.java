@@ -1,5 +1,7 @@
 package com.example.myapplication;
 
+import java.io.UnsupportedEncodingException;
+
 public class StringTrans {
     /**
      * 16进制直接转换成为字符串(无需Unicode解码)
@@ -32,7 +34,12 @@ public class StringTrans {
     public static String str2HexStr(String str) {
         char[] chars = "0123456789ABCDEF".toCharArray();//toCharArray() 方法将字符串转换为字符数组。
         StringBuilder sb = new StringBuilder(); //StringBuilder是一个类，可以用来处理字符串,sb.append()字符串相加效率高
-        byte[] bs = str.getBytes();//String的getBytes()方法是得到一个操作系统默认的编码格式的字节数组
+        byte[] bs = new byte[0];//String的getBytes()方法是得到一个操作系统默认的编码格式的字节数组
+        try {
+            bs = str.getBytes("GBK");
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
         int bit;
         for (int i = 0; i < bs.length; i++) {
             bit = (bs[i] & 0x0f0) >> 4; // 高4位, 与操作 1111 0000
@@ -43,4 +50,72 @@ public class StringTrans {
         }
         return sb.toString().trim();
     }
+
+    /**
+     * @Title:hexString2String
+     * @Description:16进制字符串转字符串
+     * @param src
+     * 16进制字符串
+     * @return 字节数组
+     * @throws
+     */
+    public static String hexString2String(String src,String oldchartype, String chartype) {
+        byte[] bts=hexString2Bytes(src);
+        try{if(oldchartype.equals(chartype))
+            return new String(bts,oldchartype);
+        else
+            return new String(new String(bts,oldchartype).getBytes(),chartype);
+        }
+        catch (Exception e){
+
+            return"";
+        }
+    }
+
+    /**
+     * @Title:hexString2Bytes
+     * @Description:16进制字符串转字节数组
+     * @param src
+     * 16进制字符串
+     * @return 字节数组
+     * @throws
+     */
+    public static byte[] hexString2Bytes(String src) {
+        int l = src.length() / 2;
+        byte[] ret = new byte[l];
+        for (int i = 0; i < l; i++) {
+            ret[i] = Integer.valueOf(src.substring(i * 2, i * 2 + 2), 16).byteValue();
+        }
+        return ret;
+    }
+
+    /**
+     * @Title:hexGBK2String
+     * @Description:16进制GBK字符串转字符串
+     * @param src
+     * 16进制字符串
+     * @return 字节数组
+     * @throws
+     */
+    public static String hexGBK2String(String src) {
+
+        return hexString2String(src,"GBK","UTF-8");
+    }
+
+    /**
+     * @Title:hexUTF82String
+     * @Description:16进制UTF-8字符串转字符串
+     * @param src
+     * 16进制字符串
+     * @return 字节数组
+     * @throws
+     */
+    public static String hexUTF82String(String src) {
+
+        return hexString2String(src,"UTF-8","UTF-8");
+    }
+
+
+
 }
+

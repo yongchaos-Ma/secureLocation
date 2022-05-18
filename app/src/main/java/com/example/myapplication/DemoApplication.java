@@ -4,8 +4,6 @@ import android.app.Application;
 
 import com.baidu.mapapi.CoordType;
 import com.baidu.mapapi.SDKInitializer;
-import com.iflytek.cloud.SpeechConstant;
-import com.iflytek.cloud.SpeechUtility;
 
 public class DemoApplication extends Application {
     @Override
@@ -25,11 +23,11 @@ public class DemoApplication extends Application {
 
         // 注意： appid 必须和下载的SDK保持一致，否则会出现10407错误
 
-        StringBuffer param = new StringBuffer();
-        param.append("appid="+"600a34da");
-        param.append(",");
-        // 设置使用v5+
-        param.append(SpeechConstant.ENGINE_MODE+"="+ SpeechConstant.MODE_MSC);
-        SpeechUtility.createUtility(com.example.myapplication.DemoApplication.this, param.toString());
+//        StringBuffer param = new StringBuffer();
+//        param.append("appid="+"600a34da");
+//        param.append(",");
+//        // 设置使用v5+
+//        param.append(SpeechConstant.ENGINE_MODE+"="+ SpeechConstant.MODE_MSC);
+//        SpeechUtility.createUtility(com.example.myapplication.DemoApplication.this, param.toString());
     }
 }

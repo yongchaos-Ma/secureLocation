@@ -4,4 +4,7 @@
     <style name="ToolbarLeft" parent="Widget.AppCompat.Toolbar">
         <item name="android:contentInsetStart">0dp</item>
     </style>
+    <style name="myNavigationDrawerStyle" >
+        <item name="android:textSize">19sp</item>
+    </style>
 </resources>

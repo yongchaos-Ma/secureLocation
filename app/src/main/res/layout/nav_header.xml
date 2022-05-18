@@ -3,8 +3,8 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="180dp"
-    android:background="?attr/colorPrimary"
+    android:layout_height="200dp"
+    android:background="@color/beige"
     android:padding="10dp">
 
     <de.hdodenhof.circleimageview.CircleImageView
@@ -14,7 +14,7 @@
         android:layout_centerInParent="true"
         android:layout_marginStart="16dp"
         android:layout_marginTop="4dp"
-        android:src="@drawable/ic_head_base"
+        android:src="@drawable/ic_head_new"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         android:clickable="true"
@@ -26,10 +26,11 @@
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
         android:text="编号未设置"
-        android:textColor="#FFF"
-        android:textSize="16sp"
+        android:textColor="#000"
+        android:textSize="18sp"
         app:layout_constraintStart_toStartOf="@id/username"
         app:layout_constraintTop_toBottomOf="@id/username"
+        android:layout_marginTop="10dp"
         tools:layout_editor_absoluteX="16dp" />
 
     <TextView
@@ -37,11 +38,12 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
-        android:text="ms"
-        android:textColor="#FFF"
-        android:textSize="16sp"
+        android:text="测试人员"
+        android:textColor="#000"
+        android:textSize="18sp"
         app:layout_constraintStart_toStartOf="@id/icon_image"
         app:layout_constraintTop_toBottomOf="@id/icon_image"
+        android:layout_marginTop="10dp"
         tools:layout_editor_absoluteX="16dp" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

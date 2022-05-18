@@ -20,5 +20,10 @@
         android:title="数据清理"
         android:orderInCategory="4"
         app:showAsAction="never"/>
+    <item
+        android:id="@+id/lorasetting"
+        android:title="设备设置"
+        android:orderInCategory="5"
+        app:showAsAction="never"/>
 
 </menu>

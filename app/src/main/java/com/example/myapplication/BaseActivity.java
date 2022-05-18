@@ -1,13 +1,20 @@
 package com.example.myapplication;
 
+import static android.view.View.SYSTEM_UI_FLAG_LAYOUT_STABLE;
+import static com.example.myapplication.BlueToothListActivity.EXTRA_DEVICE_ADDRESS;
+import static com.example.myapplication.GetTime.dateToStamp;
+import static com.example.myapplication.GetTime.format;
+import static com.example.myapplication.GetTime.getCurrentTime;
+
 import android.Manifest;
+import android.animation.ObjectAnimator;
+import android.animation.PropertyValuesHolder;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
-import android.app.ProgressDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
@@ -18,13 +25,16 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
+import android.graphics.PixelFormat;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Environment;
 import android.os.Handler;
 import android.os.IBinder;
 import android.text.TextUtils;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -34,16 +44,18 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
-import android.widget.Button;
 import android.widget.EditText;
+import android.widget.FrameLayout;
+import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.PopupWindow;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
-import androidx.appcompat.app.ActionBar;
+import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.Toolbar;
 import androidx.core.app.ActivityCompat;
 import androidx.core.app.NotificationCompat;
 import androidx.core.content.ContextCompat;
@@ -56,26 +68,43 @@ import com.baidu.mapapi.map.MapStatusUpdate;
 import com.baidu.mapapi.map.MapStatusUpdateFactory;
 import com.baidu.mapapi.map.MapView;
 import com.baidu.mapapi.model.LatLng;
+import com.example.myapplication.everyonelitepal.Node1;
+import com.example.myapplication.everyonelitepal.Node10;
+import com.example.myapplication.everyonelitepal.Node11;
+import com.example.myapplication.everyonelitepal.Node12;
+import com.example.myapplication.everyonelitepal.Node13;
+import com.example.myapplication.everyonelitepal.Node14;
+import com.example.myapplication.everyonelitepal.Node15;
+import com.example.myapplication.everyonelitepal.Node16;
+import com.example.myapplication.everyonelitepal.Node17;
+import com.example.myapplication.everyonelitepal.Node18;
+import com.example.myapplication.everyonelitepal.Node19;
+import com.example.myapplication.everyonelitepal.Node2;
+import com.example.myapplication.everyonelitepal.Node20;
+import com.example.myapplication.everyonelitepal.Node3;
+import com.example.myapplication.everyonelitepal.Node4;
+import com.example.myapplication.everyonelitepal.Node5;
+import com.example.myapplication.everyonelitepal.Node6;
+import com.example.myapplication.everyonelitepal.Node7;
+import com.example.myapplication.everyonelitepal.Node8;
+import com.example.myapplication.everyonelitepal.Node9;
 import com.example.myapplication.power_individual_demo.BleCmd06_getData;
 import com.example.myapplication.power_individual_demo.BleCmd09_getAllData;
+import com.example.myapplication.power_individual_demo.BleCmd20_setTime;
 import com.example.myapplication.power_individual_demo.BleNotifyParse;
 import com.example.myapplication.power_individual_demo.Config;
 import com.example.myapplication.power_individual_demo.DeviceListActivity;
 import com.example.myapplication.power_individual_demo.UartService;
-import com.getbase.floatingactionbutton.FloatingActionButton;
-import com.getbase.floatingactionbutton.FloatingActionsMenu;
 import com.google.android.material.navigation.NavigationView;
 import com.google.android.material.snackbar.Snackbar;
-import com.iflytek.cloud.ErrorCode;
-import com.iflytek.cloud.InitListener;
-import com.iflytek.cloud.RecognizerListener;
-import com.iflytek.cloud.RecognizerResult;
-import com.iflytek.cloud.SpeechConstant;
-import com.iflytek.cloud.SpeechError;
-import com.iflytek.cloud.SpeechRecognizer;
-import com.iflytek.cloud.ui.RecognizerDialog;
-import com.iflytek.cloud.util.ResourceUtil;
+import com.iflytek.cloud.SpeechUtility;
+import com.oguzdev.circularfloatingactionmenu.library.FloatingActionButton;
+import com.oguzdev.circularfloatingactionmenu.library.FloatingActionMenu;
+import com.oguzdev.circularfloatingactionmenu.library.SubActionButton;
 
+import org.greenrobot.eventbus.EventBus;
+import org.greenrobot.eventbus.Subscribe;
+import org.greenrobot.eventbus.ThreadMode;
 import org.litepal.LitePal;
 
 import java.io.IOException;
@@ -92,48 +121,37 @@ import java.util.regex.Pattern;
 
 import de.hdodenhof.circleimageview.CircleImageView;
 
-import static com.example.myapplication.BlueToothListActivity.EXTRA_DEVICE_ADDRESS;
-import static com.example.myapplication.GetTime.dateToStamp;
-import static com.example.myapplication.GetTime.format;
-import static com.example.myapplication.GetTime.getCurrentTime;
-import static com.example.myapplication.R.color.dodgerblue;
-
-//import com.google.android.material.floatingactionbutton.FloatingActionButton;
-//import com.google.gson.JsonParser;
-
 
 public abstract class BaseActivity extends AppCompatActivity {
 
     public MapView mMapView;
-    public static BaiduMap baiduMap;
+    public BaiduMap baiduMap;
     protected MapStatusUpdate mapStatusUpdate;
     private DrawerLayout mDrawerLayout;
-    //下面四个是用来测试项目的坐标，真实开发中应该用蓝牙进行获取真实坐标
-    public static LatLng xupt = new LatLng(34.1606259200,108.9074823500);
-//    public static LatLng ssd = new LatLng(34.1623459200,108.9374826500);
-//    public static LatLng xqzf = new LatLng(34.1602259300,108.9074323600);
-//    public static LatLng xxx = new LatLng(34.1602569300,108.9077783600);
+    //测试项目坐标
+    //public final LatLng xupt = new LatLng(34.1606259200,108.9074823500);
     //GPS信息
-    public double latitude = 0.0;    //获取纬度信息
-    public double longitude = 0.0;    //获取经度信息
+    public static double latitude = 0.0;    //获取纬度信息
+    public static double longitude = 0.0;    //获取经度信息
     public double accuracy = 0.0;
     public double direction = 0.0;
     //按键
-    public LatLng targetPosition;
-    public Button button1;
-    public Button button2;
-    public Button button3;
-    public Button button4;
-    public Button button5;
-    public Toolbar toolbar;
-    public TextView Tv5;
-    public TextView Tv6;
-    public NavigationView navView;
-    public View headview;
-    public CircleImageView headImage;
-    public FloatingActionButton fab;
-    FloatingActionButton floatingActionButton1, floatingActionButton2, floatingActionButton3;
-    FloatingActionsMenu floatingActionMenu;
+    public static LatLng newDestination;
+    private ImageButton menuButton;
+    private SubActionButton buttonFir;
+    private SubActionButton buttonSec;
+    private SubActionButton buttonThr;
+    private SubActionButton buttonFou;
+    private TextView Tv5;
+    private TextView Tv6;
+    private TextView Tv7;
+    private NavigationView navView;
+    private View headview;
+    private CircleImageView headImage;
+    //public FloatingActionButton fab;
+    FloatingActionButton floatingActionButton1;
+    FloatingActionButton floatingActionButton2;
+
     //蓝牙菜单
     private static final int REQUEST_CONNECT_DEVICE = 1;
     private static final int REQUEST_ENABLE_BT = 2;
@@ -141,10 +159,6 @@ public abstract class BaseActivity extends AppCompatActivity {
     public  BluetoothSocket mmSocket;
     public  OutputStream mmOutStream;
     public  InputStream mmInStream;
-
-    public static double ReceiveLatitude = 0.0;
-    public static double ReceiveLongitude = 0.0;
-    public static int ReceiveSerialNumber = 0;
 
     public static boolean CONNECT_STATUS = false;
     public static boolean BAND_CONNECTED = false;
@@ -154,8 +168,7 @@ public abstract class BaseActivity extends AppCompatActivity {
     public boolean EXTEND_LEGACY = false;
     public static BluetoothAdapter mBtAdapter;
 
-    public static List<LatLng> points = new ArrayList<>();
-    public static List<LatLng> fencePoints = new ArrayList<>();
+    public List<LatLng> points = new ArrayList<>();
     public static int SelfNumber = 0;
     public int WarnOthers = 1;
     public int EDGE_WARNING = 2;
@@ -168,6 +181,7 @@ public abstract class BaseActivity extends AppCompatActivity {
     public int warnTypes = 0;
     public static int getWarnedTypes = 0;
     public boolean BE_WARNED = false;
+    public boolean hasBeenBackToNormal = true;
     public boolean LOAD_COMPLETED = false;
 
     public PendingIntent pendingIntent;
@@ -175,6 +189,7 @@ public abstract class BaseActivity extends AppCompatActivity {
     public static final int NotificationId1 = 1;
     public static final int NotificationId2 = 2;
     public static final int NotificationId3 = 3;
+    public static final int NotificationId4 = 4;
 
     public static String readStr ;
 
@@ -204,47 +219,32 @@ public abstract class BaseActivity extends AppCompatActivity {
     final int[] q = {1};
 
     public LocalBroadcastManager mLocalBroadcastManager;
-    private WarningBroadcastReceiver mWarningBroadcastReceiver;
+    //private WarningBroadcastReceiver mWarningBroadcastReceiver;
     private LostBroadcastReceiver mLostBroadcastReceiver;
     private SelfWarningBroadcastReceiver mSWBroadcastReceiver;
 
-    protected static String recordMessage = null;
-    private final RecognizerDialog iatDialog=null;
-    private SpeechRecognizer recognizer=null;
-    // 本地语法构建路径
-    private final String grmPath = Environment.getExternalStorageDirectory()
-            .getAbsolutePath() + "/msc/test";
-    //新增对话框和语音听写完成标志------------------
-    private ProgressDialog pDialog=null;
-    private boolean recordIsFinish=false;
-    //-----------------------------------
+    private final String recordMessage = null;
 
     //@RequiresApi(api = Build.VERSION_CODES.M)
+    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     @Override
     protected final void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         LitePal.initialize(this);
+        SpeechUtility.createUtility(this,  "appid=74285e8e" );
 
-        setContentView(R.layout.activity_main);
-        button1 = findViewById(R.id.button_offline_map);
-        button2 = findViewById(R.id.button_trace);
-        button3 = findViewById(R.id.button_num);
-        button4 = findViewById(R.id.button_heart_rate);
-        button5 = findViewById(R.id.ic_fence);
-        toolbar = findViewById(R.id.toolbar);
-        Tv5 = findViewById(R.id.Tv_net_info);
-        Tv6 = findViewById(R.id.hr_info);
-        toolbar.inflateMenu(R.menu.main);
-        mDrawerLayout = findViewById(R.id.drawer_layout);
-        navView = findViewById(R.id.nav_view);
+        makeStatusBarTransparent();
+        setContentView(R.layout.for_fun);
+        Tv5 = findViewById(R.id.Tv_node_num_num);
+        Tv7 = findViewById(R.id.Tv_lost_num_num);
+        Tv6 = findViewById(R.id.Tv_hr_num_num);
+
+        mDrawerLayout = findViewById(R.id.fun_layout);
+        navView = findViewById(R.id.nav_view_new);
         headview = navView.inflateHeaderView(R.layout.nav_header);
         headImage = headview.findViewById(R.id.icon_image);
-        //fab = findViewById(R.id.fab);
-
-        floatingActionMenu = findViewById(R.id.fab_menu);
-        floatingActionButton1 = findViewById(R.id.fab_action_a);
-        floatingActionButton2 = findViewById(R.id.fab_action_b);
+        menuButton = findViewById(R.id.drawer_open);
 
         mMapView = findViewById(R.id.bmapView);
         //获得地图控制器
@@ -256,18 +256,13 @@ public abstract class BaseActivity extends AppCompatActivity {
             mMapView.showZoomControls(false);
          */
         //设置中心点.MapStatusUpdate放入setMapStatus方法中用来描述即将的变化
-        mapStatusUpdate = MapStatusUpdateFactory.newLatLng(xupt);
-        //baiduMap.setMapStatus(mapStatusUpdate);
+        mMapView.getChildAt(2).setPadding(0,0,0,610);//这是控制缩放控件的位置
+        mMapView.getChildAt(1).setPadding(0,0,0,165);//这是控制图标控件的位置
         //设置缩放级别
         mapStatusUpdate = MapStatusUpdateFactory.zoomTo(17);
         baiduMap.setMapStatus(mapStatusUpdate);
         mLocalBroadcastManager = LocalBroadcastManager.getInstance(this);
 
-        // 将“12345678”替换成您申请的APPID，申请地址：http://www.xfyun.cn
-        // 请勿在“=”与appid之间添加任何空字符或者转义符
-        // appid 必须和下载的SDK保持一致，否则会出现10407错误
-        // 应用程序入口处调用，避免手机内存过小，杀死后台进程后通过历史intent进入Activity造成SpeechUtility对象为null
-        //SpeechUtility.createUtility(BaseActivity.this, SpeechConstant.APPID +"=600a34da");
 
         handler=new Handler();
 
@@ -295,74 +290,107 @@ public abstract class BaseActivity extends AppCompatActivity {
 
         init();
         BroadcastInitial();
+
         UiInitial();
         requestMyPermissions();
         LitePal.getDatabase();
-        // 初始化语音识别对象
-        Log.d(TAG,"初始化语音对象");
-        recognizer = SpeechRecognizer.createRecognizer(this,mInitListener);
-        if(recognizer==null){
-            Log.e(TAG,"recognizer is null");
-        }
+        EventBus.getDefault().register(this);
+        //mSharedPreferences = getSharedPreferences(LoraSetting.PREFER_NAME, Activity.MODE_PRIVATE);
 
-        //timerFlash.schedule(timerFlashTask,0,3000);//刷新网络
+        timerFlash.schedule(timerFlashTask,0,8000);//刷新网络
     }
+//    private void requestMyPermissions() {
+//
+//        if (ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH)
+//                != PackageManager.PERMISSION_GRANTED)
+//        {//没有授权，编写申请权限代码
+//            ActivityCompat.requestPermissions(BaseActivity.this, new String[]{Manifest.permission.BLUETOOTH}, 100);
+//        } else {
+//            Log.d(TAG, "requestMyPermissions: 有蓝牙权限");
+//        }
+//        if (ContextCompat.checkSelfPermission(this,
+//                Manifest.permission.INTERNET)
+//                != PackageManager.PERMISSION_GRANTED) {
+//            //没有授权，编写申请权限代码
+//            ActivityCompat.requestPermissions(BaseActivity.this, new String[]{Manifest.permission.INTERNET}, 100);
+//        } else {
+//            Log.d(TAG, "requestMyPermissions: 有网络权限");
+//        }
+//        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
+//                != PackageManager.PERMISSION_GRANTED)
+//        {//没有授权，编写申请权限代码
+//            ActivityCompat.requestPermissions(BaseActivity.this, new String[]{Manifest.permission.ACCESS_COARSE_LOCATION}, 100);
+//        } else {
+//            Log.d(TAG, "requestMyPermissions: 有定位权限");
+//        }
+//        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+//                != PackageManager.PERMISSION_GRANTED)
+//        {//没有授权，编写申请权限代码
+//            ActivityCompat.requestPermissions(BaseActivity.this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 100);
+//        } else {
+//            Log.d(TAG, "requestMyPermissions: 有精准定位权限");
+//        }
+//        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
+//                != PackageManager.PERMISSION_GRANTED)
+//        {//没有授权，编写申请权限代码
+//            ActivityCompat.requestPermissions(BaseActivity.this, new String[]{Manifest.permission.RECORD_AUDIO}, 100);
+//        } else {
+//            Log.d(TAG, "requestMyPermissions: 有录音权限");
+//        }
+//        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CHANGE_NETWORK_STATE)
+//                != PackageManager.PERMISSION_GRANTED)
+//        {//没有授权，编写申请权限代码
+//            ActivityCompat.requestPermissions(BaseActivity.this, new String[]{Manifest.permission.CHANGE_NETWORK_STATE}, 100);
+//        } else {
+//            Log.d(TAG, "requestMyPermissions: 有改变网络状态权限");
+//        }
+//        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE)
+//                != PackageManager.PERMISSION_GRANTED)
+//        {//没有授权，编写申请权限代码
+//            ActivityCompat.requestPermissions(BaseActivity.this, new String[]{Manifest.permission.READ_PHONE_STATE}, 100);
+//        } else {
+//            Log.d(TAG, "requestMyPermissions: 有读取手机状态权限");
+//        }
+//    }
 
     private void requestMyPermissions() {
 
+
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH)
-                != PackageManager.PERMISSION_GRANTED)
-        {//没有授权，编写申请权限代码
+                != PackageManager.PERMISSION_GRANTED) {
+            //没有授权，编写申请权限代码
             ActivityCompat.requestPermissions(BaseActivity.this, new String[]{Manifest.permission.BLUETOOTH}, 100);
-        } else {
-            Log.d(TAG, "requestMyPermissions: 有蓝牙权限");
         }
-        if (ContextCompat.checkSelfPermission(this,
-                Manifest.permission.INTERNET)
+        else if (ContextCompat.checkSelfPermission(this, Manifest.permission.INTERNET)
                 != PackageManager.PERMISSION_GRANTED) {
             //没有授权，编写申请权限代码
             ActivityCompat.requestPermissions(BaseActivity.this, new String[]{Manifest.permission.INTERNET}, 100);
-        } else {
-            Log.d(TAG, "requestMyPermissions: 有网络权限");
         }
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
-                != PackageManager.PERMISSION_GRANTED)
-        {//没有授权，编写申请权限代码
+        else if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED) {
+            //没有授权，编写申请权限代码
             ActivityCompat.requestPermissions(BaseActivity.this, new String[]{Manifest.permission.ACCESS_COARSE_LOCATION}, 100);
-        } else {
-            Log.d(TAG, "requestMyPermissions: 有定位权限");
         }
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
-                != PackageManager.PERMISSION_GRANTED)
-        {//没有授权，编写申请权限代码
+        else if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED) {
+            //没有授权，编写申请权限代码
             ActivityCompat.requestPermissions(BaseActivity.this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 100);
+        } else if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
+                != PackageManager.PERMISSION_GRANTED) {
+            //没有授权，编写申请权限代码
+            ActivityCompat.requestPermissions(BaseActivity.this, new String[]{Manifest.permission.RECORD_AUDIO}, 100);
+        } else if (ContextCompat.checkSelfPermission(this, Manifest.permission.CHANGE_NETWORK_STATE)
+                != PackageManager.PERMISSION_GRANTED) {
+            //没有授权，编写申请权限代码
+            ActivityCompat.requestPermissions(BaseActivity.this, new String[]{Manifest.permission.CHANGE_NETWORK_STATE}, 100);
+        } else if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE)
+                != PackageManager.PERMISSION_GRANTED) {
+            //没有授权，编写申请权限代码
+            ActivityCompat.requestPermissions(BaseActivity.this, new String[]{Manifest.permission.READ_PHONE_STATE}, 100);
         } else {
-            Log.d(TAG, "requestMyPermissions: 有精准定位权限");
-        }
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
-                != PackageManager.PERMISSION_GRANTED)
-        {//没有授权，编写申请权限代码
-            ActivityCompat.requestPermissions(BaseActivity.this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 100);
-        } else {
-            Log.d(TAG, "requestMyPermissions: 有录音权限");
-        }
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CHANGE_NETWORK_STATE)
-                != PackageManager.PERMISSION_GRANTED)
-        {//没有授权，编写申请权限代码
-            ActivityCompat.requestPermissions(BaseActivity.this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 100);
-        } else {
-            Log.d(TAG, "requestMyPermissions: 有改变网络状态权限");
-        }
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE)
-                != PackageManager.PERMISSION_GRANTED)
-        {//没有授权，编写申请权限代码
-            ActivityCompat.requestPermissions(BaseActivity.this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 100);
-        } else {
-            Log.d(TAG, "requestMyPermissions: 有读取手机状态权限");
+            Log.d(TAG, "requestMyPermissions: 权限已全部获取");
         }
     }
-
-
 
     private void BroadcastInitial(){
         IntentFilter intentFilter = new IntentFilter();
@@ -373,15 +401,16 @@ public abstract class BaseActivity extends AppCompatActivity {
         intentFilter.addAction("com.example.myapplication.PEACE_BROADCAST");
         mLostBroadcastReceiver = new LostBroadcastReceiver();
         mSWBroadcastReceiver = new SelfWarningBroadcastReceiver();
-        mWarningBroadcastReceiver = new WarningBroadcastReceiver();
+        //mWarningBroadcastReceiver = new WarningBroadcastReceiver();
         PeaceBroadcastReceiver peaceBroadcastReceiver = new PeaceBroadcastReceiver();
 
         mLocalBroadcastManager.registerReceiver(mLostBroadcastReceiver, intentFilter);
         mLocalBroadcastManager.registerReceiver(mSWBroadcastReceiver, intentFilter);
-        mLocalBroadcastManager.registerReceiver(mWarningBroadcastReceiver, intentFilter);
+        //mLocalBroadcastManager.registerReceiver(mWarningBroadcastReceiver, intentFilter);
         mLocalBroadcastManager.registerReceiver(peaceBroadcastReceiver, intentFilter);
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     private void UiInitial(){
         headImage.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -400,15 +429,79 @@ public abstract class BaseActivity extends AppCompatActivity {
                 return true;
             }
         });
-        setSupportActionBar(toolbar);
-        ActionBar actionBar = getSupportActionBar();
-        if(actionBar != null){
-            actionBar.setDisplayHomeAsUpEnabled(true);
-            actionBar.setHomeAsUpIndicator(R.drawable.ic_menu);
+        menuButton.setOnClickListener(view -> mDrawerLayout.openDrawer(GravityCompat.START));
 
-        }
+        ImageButton baseButton = findViewById(R.id.plus_setting);
 
-        floatingActionButton1.setOnClickListener(new View.OnClickListener() {
+        FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(160, 160, 17);
+        //params.setMargins(5,5,5,5);
+        SubActionButton.Builder itemBuilder = new SubActionButton.Builder(BaseActivity.this);
+        // repeat many times:
+        ImageView itemIcon1 = new ImageView(BaseActivity.this);
+        itemIcon1.setImageDrawable(ContextCompat.getDrawable(BaseActivity.this ,R.drawable.alarm));
+        buttonFir = itemBuilder
+                .setContentView(itemIcon1)
+                .setLayoutParams(params)
+                //.setBackgroundDrawable(ContextCompat.getDrawable(BaseActivity.this,R.drawable.small_circle_button) )
+                .build();
+
+        ImageView itemIcon2 = new ImageView(BaseActivity.this);
+        itemIcon2.setImageDrawable(ContextCompat.getDrawable(BaseActivity.this ,R.drawable.microphone));
+        buttonSec = itemBuilder
+                .setContentView(itemIcon2)
+                //.setBackgroundDrawable(ContextCompat.getDrawable(BaseActivity.this,R.drawable.small_circle_button) )
+                .build();
+
+        ImageView itemIcon3 = new ImageView(BaseActivity.this);
+        itemIcon3.setImageDrawable(ContextCompat.getDrawable(BaseActivity.this ,R.drawable.clear));
+        buttonThr = itemBuilder
+                .setContentView(itemIcon3)
+                //.setBackgroundDrawable(ContextCompat.getDrawable(BaseActivity.this,R.drawable.small_circle_button) )
+                .build();
+
+        ImageView itemIcon4 = new ImageView(BaseActivity.this);
+        itemIcon4.setImageDrawable(ContextCompat.getDrawable(BaseActivity.this ,R.drawable.bluetooth));
+        buttonFou = itemBuilder
+                .setContentView(itemIcon4)
+                //.setBackgroundDrawable(ContextCompat.getDrawable(BaseActivity.this,R.drawable.small_circle_button) )
+                .build();
+
+
+        FloatingActionMenu actionMenu = new FloatingActionMenu.Builder(BaseActivity.this)
+                .addSubActionView(buttonFir)
+                .addSubActionView(buttonSec)
+                .addSubActionView(buttonThr)
+                .addSubActionView(buttonFou)
+                .setStartAngle(250)
+                .setEndAngle(120)
+                .setRadius(240)
+                .attachTo(baseButton)
+                .build();
+
+        actionMenu.setStateChangeListener(new FloatingActionMenu.MenuStateChangeListener() {
+            @Override
+            public void onMenuOpened(FloatingActionMenu floatingActionMenu) {
+                baseButton.setRotation(0);
+                PropertyValuesHolder pvhR = PropertyValuesHolder.ofFloat(
+                        View.ROTATION, 45);
+
+                ObjectAnimator animation = ObjectAnimator
+                        .ofPropertyValuesHolder(baseButton, pvhR);
+                animation.start();
+            }
+
+            @Override
+            public void onMenuClosed(FloatingActionMenu floatingActionMenu) {
+                baseButton.setRotation(45);
+                PropertyValuesHolder pvhR = PropertyValuesHolder.ofFloat(
+                        View.ROTATION, 0);
+                ObjectAnimator animation = ObjectAnimator
+                        .ofPropertyValuesHolder(baseButton, pvhR);
+                animation.start();
+            }
+        });
+
+        buttonFir.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 if(isOdd(p[0])){
                     //向其他成员发送急救信息
@@ -418,13 +511,13 @@ public abstract class BaseActivity extends AppCompatActivity {
                     intent.setComponent(new ComponentName(BaseActivity.this, SelfWarningBroadcastReceiver.class));
                     mLocalBroadcastManager.sendBroadcast(intent);
                     Toast.makeText(BaseActivity.this,"sos",Toast.LENGTH_LONG).show();
-                    toolbar.setBackgroundColor(getResources().getColor(R.color.lightgreen));
+                    //toolbar.setBackgroundColor(getResources().getColor(R.color.lightgreen));
                     //fab.setBackgroundTintList(ColorStateList.valueOf(getResources().getColor(red)));
                     BE_WARNED = true;
                 }else {
                     //停止呼救
                     warnTypes = 0;
-                    toolbar.setBackgroundColor(getResources().getColor(dodgerblue));
+                    //toolbar.setBackgroundColor(getResources().getColor(dodgerblue));
                     //fab.setBackgroundTintList(ColorStateList.valueOf(getResources().getColor(orange)));
                     BE_WARNED = false;
                 }
@@ -432,21 +525,24 @@ public abstract class BaseActivity extends AppCompatActivity {
 
             }
         });
-        floatingActionButton2.setOnClickListener(new View.OnClickListener() {
+        buttonSec.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
-                if (recognizer!=null){
-                    recognizer.cancel();
-                    recognizer.destroy();
+                new RecognizeModule().startNoDialogOffline(BaseActivity.this);
+                //startNoDialogOffline(BaseActivity.this);
+            }
+        });
+        final int[] i = {1};
+        buttonFou.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                if(isOdd(i[0])){
+                    onBluetoothAction();
+                }else {
+                    onBluetoothDisconnect();
                 }
-                startNoDialogOffline();
-                //显示对话框----------------
-                showProgressDialog();
-                //----------------------
-
+                i[0]++;
             }
         });
 
-        Tv6.setText("心率数据");
         Tv6.setGravity(Gravity.START);
 
         mDrawerLayout.openDrawer(GravityCompat.START);
@@ -464,12 +560,6 @@ public abstract class BaseActivity extends AppCompatActivity {
                 if(!EXTEND_LEGACY){
                     loadChoice();
                 }
-//                if(!SELFNUMBER_SETTLED){
-//                    loadChoice();
-//                    EXTEND_LEGACY = true;
-//                    loadingClick();
-//                }
-
             }
 
             @Override
@@ -477,169 +567,79 @@ public abstract class BaseActivity extends AppCompatActivity {
             }
         });
 
+
+
+        SharedPreferences setting = getSharedPreferences("com.ms.app", 0);
+        boolean first = setting.getBoolean("FIRST", true);
+        if (first) {// 第一次则跳转到注册页面
+            setting.edit().putBoolean("FIRST", false).apply();
+            guideView();
+        }
+
     }
 
-    //对话框显示方法-----------------------------------
-    private void showProgressDialog() {
-        pDialog = new ProgressDialog(BaseActivity.this);
+    private void guideView(){
 
-        pDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
-        pDialog.setProgress(100);
-        pDialog.setMessage("请稍等...");
-        pDialog.setIndeterminate(false);
-        pDialog.show();
+        WindowManager mWindowManager = getWindowManager();
+        final int[] i = {0};
+        LayoutInflater layoutInflater = getLayoutInflater();
+        final View guideView = layoutInflater.inflate(R.layout.guide, null);
+        final ImageView img = guideView.findViewById(R.id.img);
+        RelativeLayout swtich = guideView.findViewById(R.id.swtich);
 
-        WindowManager.LayoutParams lp = pDialog.getWindow().getAttributes();
-        lp.gravity = Gravity.CENTER;
-        Window win = pDialog.getWindow();
-        win.setAttributes(lp);
 
-        new Thread(new Runnable() {
-
+        swtich.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void run() {
-                //long startTime = System.currentTimeMillis();
-                int progress = 0;
+            public void onClick(View v) {
 
-                //while (System.currentTimeMillis() - startTime < 1000) {
-                //语音听写完成后，释放对话框
-                while (!recordIsFinish) {
-                    try {
-                        progress += 10;
-                        pDialog.setProgress(progress);
-                        Thread.sleep(100);
-                    } catch (InterruptedException e) {
-                        pDialog.dismiss();
-                    }
+                switch (i[0]) {
+                    case 0:
+                        mDrawerLayout.closeDrawer(GravityCompat.START);
+                        img.setBackgroundResource(R.drawable.guide4);
+                        i[0]++;
+                        break;
+                    case 1:
+                        i[0] = 0;
+                        mWindowManager.removeView(guideView);
+                        mDrawerLayout.openDrawer(GravityCompat.START);
+                        break;
                 }
-
-                pDialog.dismiss();
-                recordIsFinish=false;
-            }
-        }).start();
-    }
-//--------------------------------------------------------
-
-    /**
-     * 初始化监听器。
-     */
-    private final InitListener mInitListener = new InitListener() {
-
-        @Override
-        public void onInit(int code) {
-            Log.d("tag", "SpeechRecognizer init() code = " + code);
-            if (code != ErrorCode.SUCCESS) {
-                Log.d("tag", "初始化失败，错误码：" + code);
-            }
-        }
-    };
-
-    private void startNoDialogOffline(){
-        //1.创建SpeechRecognizer对象，第二个参数：本地听写时传InitListener
-        Log.d(TAG,"初始化语音对象(函数内)");
-        recognizer = SpeechRecognizer.createRecognizer(this,mInitListener);
-        if(recognizer==null){
-            Log.e(TAG,"recognizer is null");
-        }
-        //2.设置听写参数
-
-        //设置语法ID和 SUBJECT 为空，以免因之前有语法调用而设置了此参数；或直接清空所有参数，具体可参考 DEMO 的示例。
-        recognizer.setParameter( SpeechConstant.PARAMS, null );
-        recognizer.setParameter( SpeechConstant.SUBJECT, null );
-        //设置返回结果格式，目前支持json,xml以及plain 三种格式，其中plain为纯听写文本内容
-        recognizer.setParameter(SpeechConstant.RESULT_TYPE, "json");
-        //此处engineType为“cloud”
-        recognizer.setParameter( SpeechConstant.ENGINE_TYPE, "local" );
-        //设置语音输入语言，zh_cn为简体中文
-        recognizer.setParameter(SpeechConstant.LANGUAGE, "zh_cn");
-        //设置结果返回语言
-        recognizer.setParameter(SpeechConstant.ACCENT, "mandarin");
-        // 设置语音前端点:静音超时时间，单位ms，即用户多长时间不说话则当做超时处理
-        //取值范围{1000～10000}
-        recognizer.setParameter(SpeechConstant.VAD_BOS, "4000");
-        //设置语音后端点:后端点静音检测时间，单位ms，即用户停止说话多长时间内即认为不再输入，
-        //自动停止录音，范围{0~10000}
-        recognizer.setParameter(SpeechConstant.VAD_EOS, "1000");
-        //设置标点符号,设置为"0"返回结果无标点,设置为"1"返回结果有标点
-        recognizer.setParameter(SpeechConstant.ASR_PTT,"1");
-
-        // 设置本地识别资源
-        recognizer.setParameter(ResourceUtil.ASR_RES_PATH, getResourcePath());
-        // 设置语法构建路径
-        //recognizer.setParameter(ResourceUtil.GRM_BUILD_PATH, grmPath);
-        // 设置本地识别使用语法id
-        //recognizer.setParameter(SpeechConstant.LOCAL_GRAMMAR, "call");
-        // 设置识别的门限值
-        recognizer.setParameter(SpeechConstant.MIXED_THRESHOLD, "30");
-        // 使用8k音频的时候请解开注释
-//			mAsr.setParameter(SpeechConstant.SAMPLE_RATE, "8000");
-        // 设置音频保存路径，保存音频格式支持pcm、wav，设置路径为sd卡请注意WRITE_EXTERNAL_STORAGE权限
-        recognizer.setParameter(SpeechConstant.AUDIO_FORMAT,"wav");
-        recognizer.setParameter(SpeechConstant.ASR_AUDIO_PATH, Environment.getExternalStorageDirectory()+"/msc/asr.wav");
-
-
-        //3.设置回调接口
-        recognizer.startListening(new RecognizerListener() {
-            public IBinder asBinder() {
-                return null;
-            }
-
-            @Override
-            public void onVolumeChanged(int i, byte[] bytes) {
-
-            }
-
-            @Override
-            public void onBeginOfSpeech() {
-
-            }
-
-            @Override
-            public void onEndOfSpeech() {
-
-            }
-
-            @Override
-            public void onResult(RecognizerResult recognizerResult, boolean isLast) {
-                if (isLast) {
-                    String json = recognizerResult.getResultString();
-                    recordMessage = JasonParser.parseIatResult(json);
-                    Log.d("tag",recordMessage);
-                    Intent intent=new Intent(BaseActivity.this,LocationActivity.class);//xxx.class参数是你需要将数据传递的目标页面
-                    //传递基本数据类型
-                    String extraMessage = StringTrans.str2HexStr(recordMessage);
-                    Log.d(TAG, "HexedRun: recordMessage to Hex is:" + extraMessage);
-                    intent.putExtra("recordMessage",extraMessage);
-                    startActivity(intent);
-                    Log.d(TAG, "onResult: recordMessage is: " + recordMessage);
-                    Toast.makeText(BaseActivity.this, recordMessage, Toast.LENGTH_SHORT).show();
-                    //语音听写完成标志---------------------------
-                    recordIsFinish=true;
-                    //------------------------------------------
-                }
-            }
-
-            public void onError(SpeechError speechError) {
-                Log.d("error", speechError.toString());
-            }
-
-
-            @Override
-            public void onEvent(int i, int i1, int i2, Bundle bundle) {
-
             }
         });
+        //设置参数
+        WindowManager.LayoutParams params = new WindowManager.LayoutParams();
+        params.type = WindowManager.LayoutParams.TYPE_APPLICATION;
+        params.format = PixelFormat.RGBA_8888;
+        params.gravity = Gravity.CENTER;
+
+        WindowManager wm = (WindowManager) getSystemService(Context.WINDOW_SERVICE);
+        DisplayMetrics dm = new DisplayMetrics();
+        wm.getDefaultDisplay().getMetrics(dm);
+        params.width = dm.widthPixels;         // 屏幕宽度（像素）
+        params.height = dm.heightPixels;       // 屏幕高度（像素）
+        mWindowManager.addView(guideView, params);
     }
 
-    //获取识别资源路径
-    private String getResourcePath(){
-        StringBuffer tempBuffer = new StringBuffer();
-        //识别通用资源
-        tempBuffer.append(ResourceUtil.generateResourcePath(this, ResourceUtil.RESOURCE_TYPE.assets, "iat/common.jet"));
-        tempBuffer.append(";");
-        tempBuffer.append(ResourceUtil.generateResourcePath(this, ResourceUtil.RESOURCE_TYPE.assets, "iat/sms_16k.jet"));
-        return tempBuffer.toString();
+
+    public void makeStatusBarTransparent() {
+        Window window = this.getWindow();
+        window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
+        window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+        int option = window.getDecorView().getSystemUiVisibility() | SYSTEM_UI_FLAG_LAYOUT_STABLE | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN;
+        window.getDecorView().setSystemUiVisibility(option);
+        window.setStatusBarColor(Color.TRANSPARENT);
+        changeStatusBarTextColor(true);
     }
+    private void changeStatusBarTextColor(boolean isBlack) {
+        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.M) {
+            if (isBlack) {
+                getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);//设置状态栏黑色字体
+            }else {
+                getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_VISIBLE);//恢复状态栏白色字体
+            }
+        }
+    }
+
 
     private void loadChoice(){
         //测试按键
@@ -678,7 +678,27 @@ public abstract class BaseActivity extends AppCompatActivity {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 loadingClick();
-
+                LitePal.deleteAll(SelfLocationDatabase.class);
+                LitePal.deleteAll(Node1.class);
+                LitePal.deleteAll(Node2.class);
+                LitePal.deleteAll(Node3.class);
+                LitePal.deleteAll(Node4.class);
+                LitePal.deleteAll(Node5.class);
+                LitePal.deleteAll(Node6.class);
+                LitePal.deleteAll(Node7.class);
+                LitePal.deleteAll(Node8.class);
+                LitePal.deleteAll(Node9.class);
+                LitePal.deleteAll(Node10.class);
+                LitePal.deleteAll(Node11.class);
+                LitePal.deleteAll(Node12.class);
+                LitePal.deleteAll(Node13.class);
+                LitePal.deleteAll(Node14.class);
+                LitePal.deleteAll(Node15.class);
+                LitePal.deleteAll(Node16.class);
+                LitePal.deleteAll(Node17.class);
+                LitePal.deleteAll(Node18.class);
+                LitePal.deleteAll(Node19.class);
+                LitePal.deleteAll(Node20.class);
             }
         });
         newStorageBuilder.show();
@@ -760,8 +780,61 @@ public abstract class BaseActivity extends AppCompatActivity {
             setTarget = isOdd(q[0]);
             q[0]++;
 
+        } else if(itemId == R.id.route_search){//路线搜索
+            EventBus.getDefault().post(new BaseActivity.routeSearchEvent(true));
+
+        } else if(itemId == R.id.hw_setting){
+            Intent intent = new Intent(BaseActivity.this, LoraSetting.class);
+            startActivity(intent);
         }
 
+    }
+
+    public void onBluetoothAction(){
+        if (!mBtAdapter.isEnabled()) {
+            Intent enableIntent = new Intent(
+                    BluetoothAdapter.ACTION_REQUEST_ENABLE);
+            startActivityForResult(enableIntent, REQUEST_ENABLE_BT);
+        } else {
+            Toast.makeText(BaseActivity.this, "蓝牙已打开", Toast.LENGTH_SHORT)
+                    .show();
+            if (!SELFNUMBER_SETTLED) {
+                Toast.makeText(BaseActivity.this, "请先设置本机编号！", Toast.LENGTH_SHORT)
+                        .show();
+            } else {
+                Intent serverIntent = new Intent(BaseActivity.this, BlueToothListActivity.class);
+                startActivityForResult(serverIntent, REQUEST_CONNECT_DEVICE);
+            }
+        }
+    }
+    public void onBluetoothDisconnect(){
+        if (!CONNECT_STATUS && !BAND_CONNECTED) {
+            Toast.makeText(BaseActivity.this, "无连接", Toast.LENGTH_SHORT)
+                    .show();
+        } else if (CONNECT_STATUS && BAND_CONNECTED) {
+            if (intf == intf_ble_uart) {
+                mUartService.disconnect();
+                mUartService.close();
+                stopTimer();
+            }
+            cancelconnect();
+            Toast.makeText(BaseActivity.this, "已断开连接", Toast.LENGTH_SHORT)
+                    .show();
+        } else if (CONNECT_STATUS) {
+            cancelconnect();
+            Toast.makeText(BaseActivity.this, "已断开节点连接", Toast.LENGTH_SHORT)
+                    .show();
+        } else if (BAND_CONNECTED) {
+            //if (intf == intf_ble_uart) {
+                //hr_config.clear_config();
+                mUartService.disconnect();
+                mUartService.close();
+                stopTimer();
+                Toast.makeText(BaseActivity.this, "已断开手环连接", Toast.LENGTH_SHORT)
+                        .show();
+            //}
+
+        }
     }
 
     @Override
@@ -825,9 +898,14 @@ public abstract class BaseActivity extends AppCompatActivity {
                                     .show();
                         }
                     }).show();
+        } else if (itemId == R.id.lorasetting) {
+            Intent intent = new Intent(BaseActivity.this, LoraSetting.class);
+            startActivity(intent);
+
         } else if (itemId == android.R.id.home) {
             mDrawerLayout.openDrawer(GravityCompat.START);
         }
+
         return true;
     }
 
@@ -854,8 +932,11 @@ public abstract class BaseActivity extends AppCompatActivity {
                         SELFNUMBER_SETTLED = true;
                         SelfNumber = buffer;
                         TextView selfNum = findViewById(R.id.num_and_class);
+                        TextView selfName = findViewById(R.id.username);
                         selfNum.setText("自身编号: " + SelfNumber);
-                        headImage.setImageResource(R.drawable.imperial_fist);
+                        selfName.setText("测试人员" + SelfNumber);
+                        headImage.setImageResource(R.drawable.head_new);
+                        //TestNotification();
 
                     }else {
                         Toast.makeText(BaseActivity.this, "请输入1到20之间的数字！", Toast.LENGTH_SHORT).show();
@@ -877,8 +958,9 @@ public abstract class BaseActivity extends AppCompatActivity {
             timerStartHRTask = new TimerTask() {
                 @Override
                 public void run() {
-
+                    BLE_STOPPED=false;
                     int tens = 0;
+                    int warn_count = 10;
 //                    BleCmd06_getData getData = new BleCmd06_getData();
 //                    setTx_data(getData.onHR());
                     BleCmd09_getAllData getAllData = new BleCmd09_getAllData();
@@ -906,20 +988,24 @@ public abstract class BaseActivity extends AppCompatActivity {
                                 handler.post(runnableUiTv6);
                         }
                         if(Integer.parseInt(cutted) <40 && BAND_CONNECTED){
-                            if(danger_HR > 4){
+                            if(danger_HR >= 2){
                                 warnTypes = HR_Warning;
                                 Intent intent = new Intent("com.example.myapplication.SELF_WARN_BROADCAST");
                                 intent.setPackage("com.example.myapplication");
                                 intent.setComponent(new ComponentName(BaseActivity.this, SelfWarningBroadcastReceiver.class));
                                 mLocalBroadcastManager.sendBroadcast(intent);
-                                toolbar.setBackgroundColor(getResources().getColor(R.color.lightgreen));
+                                //toolbar.setBackgroundColor(getResources().getColor(R.color.materialComplementary));
+                                sendNotificationSelf();
                                 BE_WARNED = true;
+                                hasBeenBackToNormal = false;
                             }
-                            danger_HR++;
+                            if(danger_HR <= 5)
+                                danger_HR++;
                         }else if(BAND_CONNECTED && Integer.parseInt(cutted) >= 40 && danger_HR > 0 && warnTypes != 1){
                             danger_HR--;
                             warnTypes = 0;
                             BE_WARNED = false;
+                            hasBeenBackToNormal = true;
                         }
 
                     }
@@ -1041,14 +1127,17 @@ public abstract class BaseActivity extends AppCompatActivity {
             }
             if(!BLE_STOPPED){
                 if(HR_DETECTED){
-                    Tv6.setText("当前心率：" + cutted +"bpm");
-                }else Tv6.setText("暂无数据");
-            }else if(BAND_CONNECTED){
-                Tv6.setText("手环已连接");
+                    //Tv6.setText("当前心率：" + cutted +"bpm");
+                    Tv6.setText(cutted);
+                }
+                //else Tv6.setText("暂无数据");
             }
-            else{
-                Tv6.setText("手环连接已断开");
-            }
+//            else if(BAND_CONNECTED){
+//                Tv6.setText("手环已连接");
+//            }
+//            else{
+//                Tv6.setText("手环连接已断开");
+//            }
             Tv6.setGravity(Gravity.START);
         }
     };
@@ -1157,6 +1246,7 @@ public abstract class BaseActivity extends AppCompatActivity {
                         {
                             mUartService.connect(hr_config.getAddr());
                             BAND_CONNECTED = true;
+
                         }
                     }
                 }
@@ -1181,6 +1271,23 @@ public abstract class BaseActivity extends AppCompatActivity {
                         if(!hr_config.isValid())
                         {
                             hr_config.save_config(mDevice.getName(), mDevice.getAddress());
+                        }
+
+                        BleCmd20_setTime bleCmd20 = new BleCmd20_setTime();
+                        try {
+                            setTx_data(bleCmd20.getAllData());//手机端发送请求数据格式
+                            Log.d(TAG,"发送时间同步请求");
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+
+                        //接收手环回复的数据格式解析
+                        if(BleNotifyParse.received != null){
+                            Log.d(TAG,"接收时间同步请求");
+                            Log.d(TAG,BleNotifyParse.received);
+                            if(BleNotifyParse.received.startsWith("A0", 2)&& BleNotifyParse.received.startsWith("08", 8)){
+                                Log.d(TAG,"时间已同步");
+                            }
                         }
                     }
                 });
@@ -1273,7 +1380,7 @@ public abstract class BaseActivity extends AppCompatActivity {
                         if (!TextUtils.isEmpty(address)) {
                             BluetoothDevice device = mBtAdapter.getRemoteDevice(address);
                             ConnectThread(device);
-                            // new BlueToothActivity().ConnectThread(device);
+
                         }
                     }
                 break;
@@ -1300,6 +1407,10 @@ public abstract class BaseActivity extends AppCompatActivity {
             mBtAdapter.cancelDiscovery();
             mmSocket.connect();
             Toast.makeText(BaseActivity.this, "连接成功", Toast.LENGTH_LONG).show();
+            ImageView itemIconBlue = new ImageView(BaseActivity.this);
+            itemIconBlue.setImageDrawable(ContextCompat.getDrawable(BaseActivity.this ,R.drawable.bluetooth_lighted));
+            buttonFou.removeAllViews();
+            buttonFou.setContentView(itemIconBlue);
             CONNECT_STATUS = true;
             CAN_NOTIFY = true;
              //接收数据进程
@@ -1358,7 +1469,7 @@ public abstract class BaseActivity extends AppCompatActivity {
                     msgbuffer[msgbytes] = (byte) '\n';
                     msgbytes++;
                     readStr = new String(msgbuffer, 0, msgbytes);
-                    new HeadAnalaysis().Head(readStr);
+                    new HeadAnalysis().Head(readStr, BaseActivity.this);
                 } catch (IOException | ParseException e) {
                     e.printStackTrace();
                     break;
@@ -1371,60 +1482,127 @@ public abstract class BaseActivity extends AppCompatActivity {
         @Override
         public void run() {
             //更新界面
-            if(!CONNECT_STATUS){
-                Tv5.setText("蓝牙尚未连接");
+            if(EXTEND_LEGACY){
+                Log.d(TAG, "run: "+TotalNumber+" & "+UnconnectableNumber);
+                //Tv5.setText("节点数：" + TotalNumber  + " 邻居数：" + NeighborNumber +" 丢失数："+ UnconnectableNumber);
+                //Tv5.setText("节点数：" + TotalNumber +" 丢失数："+ UnconnectableNumber);
+                Tv5.setText(String.valueOf(TotalNumber) );
+                Tv7.setText(String.valueOf(UnconnectableNumber));
             }
-            else{
-                Tv5.setText("节点数：" + TotalNumber + " 邻居数：" + NeighborNumber +" 丢失数："+ UnconnectableNumber);
-            }
+//            else{
+//                Tv5.setText("蓝牙尚未连接");
+//            }
             Tv5.setGravity(Gravity.START);
 
         }
     };
 
-//    public Timer timerFlash = new Timer();
-//    public TimerTask timerFlashTask = new TimerTask() {
-//        @Override
-//        public void run() {
-//            new Thread(){
-//                public void run(){
-//                    handler.post(runnableUi);
-//                    Log.d(TAG, "Timer: record now is " + recordMessage);
-//                }
-//            }.start();
-//        }
-//    };
+    public Timer timerFlash = new Timer();
+    public TimerTask timerFlashTask = new TimerTask() {
+        @Override
+        public void run() {
+            new Thread(){
+                public void run(){
+                    handler.post(runnableUi);
+                    Log.d(TAG, "Timer: record now is " + recordMessage);
+                }
+            }.start();
+        }
+    };
 
     public Runnable runnableUiBlue = new Runnable(){
         @Override
         public void run() {
             //更新界面
-            toolbar.setBackgroundColor(getResources().getColor(dodgerblue));
+            //toolbar.setBackgroundColor(getResources().getColor(dodgerblue));
         }
     };
     public Runnable runnableUiYellow =new Runnable(){
         @Override
         public void run() {
-            toolbar.setBackgroundColor(getResources().getColor(R.color.gold));
+            //toolbar.setBackgroundColor(getResources().getColor(R.color.materialComplementary));
         }
     };
     public Runnable runnableUiRed = new Runnable(){
         @Override
         public void run() {
             //更新界面
-            toolbar.setBackgroundColor(getResources().getColor(R.color.red));
+            //toolbar.setBackgroundColor(getResources().getColor(R.color.materialTriadic2));
         }
     };
 
-    public class WarningBroadcastReceiver extends BroadcastReceiver{
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            if(intent.getAction().equals("com.example.myapplication.WARNING_BROADCAST")) {
-                int dangerNode = intent.getIntExtra("dangerNode",0);
-                sendNotificationOthers(dangerNode);
-            }
-        }
+    // This method will be called when a MessageEvent is posted (in the UI thread for Toast)
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onWarningMessageEvent(LocationActivity.MessageEvent event) {
+        //Toast.makeText(this, event.message, Toast.LENGTH_SHORT).show();
+        Log.d(TAG, "onMessageEvent: " + event.message);
+        sendNotificationOthers(Integer.parseInt(event.message) );
+
     }
+
+    // This method will be called when a SomeOtherEvent is posted
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onPeaceMessageEvent(LocationActivity.PeaceMessageEvent event) {
+        Log.d(TAG, "onPeaceMessageEvent: " + event.peaceIndex);
+        if(event.peaceIndex)
+            handler.post(runnableUiBlue);
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onMessageEvent(RecognizeModule.MessageEvent event) {
+        //Toast.makeText(this, event.message, Toast.LENGTH_SHORT).show();
+        Log.d(TAG, "onMessageEvent: " + event.message);
+        String extraMessage = StringTrans.str2HexStr(event.message);
+        EventBus.getDefault().post(new BaseActivity.RecordMessageEvent(extraMessage));
+        //receivedMessage = StringTrans.hexStr2Str(extraMessage);
+//        tvRecordResult.setText("录音结果："+event.message);
+//        txRecordEncode.setText("转码结果"+extraMessage);
+//        if(CONNECT_STATUS)
+//            write(extraMessage);
+//        //txEncodeCompressed.setText(receivedMessage);
+    }
+
+//    @Subscribe(threadMode = ThreadMode.MAIN)
+//    public void onRecordMessageEvent(HeadAnalysis.RecordMessageEvent event) {
+//        //Toast.makeText(this, event.message, Toast.LENGTH_SHORT).show();
+//
+//        //String mandarin = StringTrans.hexStr2Str(event.recordMessage[1]);
+//
+//        String mandarin = StringTrans.hexUTF82String(event.recordMessage[1]);
+//        Log.d(TAG, "onRecordMessageEvent: " + mandarin);
+//        new SpeakModule().speechSync(BaseActivity.this, mandarin);
+//
+//    }
+
+    public class RecordMessageEvent {
+        public final String message;
+        public RecordMessageEvent(String message) {
+            this.message = message;
+        }
+
+    }
+
+    public class routeSearchEvent {
+
+        public final Boolean callUp;
+        //= "Eventbus test";
+
+        public routeSearchEvent(Boolean callUp) {
+            this.callUp = callUp;
+        }
+
+    }
+
+
+//    public class WarningBroadcastReceiver extends BroadcastReceiver{
+//        @Override
+//        public void onReceive(Context context, Intent intent) {
+//            if(intent.getAction().equals("com.example.myapplication.WARNING_BROADCAST")) {
+//                int dangerNode = intent.getIntExtra("dangerNode",0);
+//                sendNotificationOthers(dangerNode);
+//            }
+//        }
+//    }
     public class LostBroadcastReceiver extends BroadcastReceiver{
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -1481,6 +1659,33 @@ public abstract class BaseActivity extends AppCompatActivity {
                         ;//无效
                 notification = notificationBuilder.build();
             }
+        }else if (warnTypes == HR_Warning) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                mChannel = new NotificationChannel(id1, name1, NotificationManager.IMPORTANCE_HIGH);
+                mChannel.enableVibration(true);
+                mChannel.setVibrationPattern(new long[]{100, 200, 300});
+                assert notificationManager != null;
+                notificationManager.createNotificationChannel(mChannel);
+                notification = new Notification.Builder(this, id1)
+                        .setChannelId(id1)
+                        .setContentTitle("警报")
+                        .setContentText("心率异常！！！请寻求救助！！！")
+                        .setSmallIcon(R.drawable.ic_launcher)
+                        .setContentIntent(pendingIntent)
+                        .setVisibility(Notification.VISIBILITY_PUBLIC)
+                        .build();
+            } else {
+                NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this)
+                        .setContentTitle("警报")
+                        .setContentText("心率异常！！！请寻求救助！！！")
+                        .setSmallIcon(R.drawable.ic_launcher)
+                        .setVibrate(new long[]{100, 200, 300})
+                        .setContentIntent(pendingIntent)
+                        .setChannelId(id1)
+                        .setAutoCancel(true)
+                        .setDefaults(Notification.DEFAULT_SOUND);//无效
+                notification = notificationBuilder.build();
+            }
         }
 
         if(notification != null)
@@ -1498,7 +1703,7 @@ public abstract class BaseActivity extends AppCompatActivity {
                 handler.post(runnableUiYellow);
             }
         }.start();
-        if(GET_WARNED && getWarnedTypes != 0){
+        if(GET_WARNED && getWarnedTypes != 0 && getWarnedTypes != 2){
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 NotificationChannel mChannel = new NotificationChannel(id2, name2, NotificationManager.IMPORTANCE_HIGH);
                 mChannel.enableVibration(true);
@@ -1507,10 +1712,11 @@ public abstract class BaseActivity extends AppCompatActivity {
                 notificationManager.createNotificationChannel(mChannel);
                 if (1 == getWarnedTypes) {
                     showUpText = "节点" + dangerNode + "发出警报";
-                } else if (2 == getWarnedTypes) {
+                }
+                else if (2 == getWarnedTypes) {
                     showUpText = "节点" + dangerNode + "濒临走失";
                 } else if (3 == getWarnedTypes) {
-                    showUpText = "节点" + dangerNode + "生命危急！！！";
+                    showUpText = "节点" + dangerNode + "生命体征异常";
                 }
 
                 notification = new Notification.Builder(this, id2)
@@ -1554,7 +1760,7 @@ public abstract class BaseActivity extends AppCompatActivity {
             mChannel.setVibrationPattern(new long[]{100,200,300,200,100});
             notificationManager.createNotificationChannel(mChannel);
 
-            notification = new Notification.Builder(this)
+            notification = new Notification.Builder(this, id3)
                     .setChannelId(id3)
                     .setContentTitle("警报")
                     .setContentText("超出边缘，请退回或检查蓝牙连接！！！！！")
@@ -1575,14 +1781,16 @@ public abstract class BaseActivity extends AppCompatActivity {
         notificationManager.notify(NotificationId3, notification);
     }
 
-
-
     // 取消链接
     public void cancelconnect() {
         try {
             mmSocket.close();
             CONNECT_STATUS = false;
             CAN_NOTIFY = false;
+            ImageView itemIcon = new ImageView(BaseActivity.this);
+            itemIcon.setImageDrawable(ContextCompat.getDrawable(BaseActivity.this ,R.drawable.bluetooth));
+            buttonFou.removeAllViews();
+            buttonFou.setContentView(itemIcon);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -1614,10 +1822,12 @@ public abstract class BaseActivity extends AppCompatActivity {
         //在activity执行onDestroy时执行mMapView.onDestroy()，实现地图生命周期管理
         mMapView.onDestroy();
         points.clear();
-        //timerFlash.cancel();
+        timerFlash.cancel();
         //timerChanged.cancel();
         stopTimer();
+        Log.d(TAG, "onDestroy: Before super");
         super.onDestroy();
+        EventBus.getDefault().unregister(this);
         LocalBroadcastManager.getInstance(this).unregisterReceiver(UARTStatusChangeReceiver);
         unbindService(mServiceConnection);
         if (mUartService != null) {
@@ -1625,8 +1835,9 @@ public abstract class BaseActivity extends AppCompatActivity {
             mUartService = null;
         }
 
-        mLocalBroadcastManager.unregisterReceiver(mWarningBroadcastReceiver);
+        //mLocalBroadcastManager.unregisterReceiver(mWarningBroadcastReceiver);
         mLocalBroadcastManager.unregisterReceiver(mSWBroadcastReceiver);
         mLocalBroadcastManager.unregisterReceiver(mLostBroadcastReceiver);
+        Log.d(TAG, "onDestroy: After super");
     }
 }

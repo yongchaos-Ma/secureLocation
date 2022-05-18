@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
+
+    <ListPreference
+        android:defaultValue="4800"
+        android:entries="@array/speed_entries"
+        android:entryValues="@array/speed_values"
+        android:key="speed_preference"
+        android:title="空中速率选择" />
+    <ListPreference
+        android:defaultValue="22"
+        android:entries="@array/power_entries"
+        android:entryValues="@array/power_values"
+        android:key="power_preference"
+        android:title="发射功率选择" />
+    <EditTextPreference
+        android:dialogTitle="请输入信道(0-83)："
+        android:key="channel_preference"
+        android:defaultValue="1"
+        android:summary="默认值：1 "
+        android:title="信道" />
+    <EditTextPreference
+        android:dialogTitle="请输入密钥(0-65535)"
+        android:key="code_preference"
+        android:defaultValue="0"
+        android:summary="默认值：0 "
+        android:title="密钥" />
+    <EditTextPreference
+        android:dialogTitle="请输入自定义设备名称"
+        android:key="rename_preference"
+        android:defaultValue="DEVICE123"
+        android:summary="请输入DEVICE + 编号形式"
+        android:title="自定义设备名称" />
+
+
+</PreferenceScreen>

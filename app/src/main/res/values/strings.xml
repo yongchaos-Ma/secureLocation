@@ -1,5 +1,105 @@
 <resources>
-    <string name="app_name">救援定位 Alpha版</string>
+    <string name="app_name">安游天下</string>
+    <string name="app_id">8f258aff</string>
+    <!-- 合成 -->
+    <string-array name="voicer_cloud_entries">
+        <item>小燕</item>
+        <item>小宇</item>
+        <item>凯瑟琳</item>
+        <item>亨利</item>
+        <item>玛丽</item>
+        <item>小研</item>
+        <item>小琪</item>
+        <item>小峰</item>
+        <item>小梅</item>
+        <item>小莉</item>
+        <item>小蓉</item>
+        <item>小芸</item>
+        <item>小坤</item>
+        <item>小强 </item>
+        <item>小莹</item>
+        <item>小新</item>
+        <item>楠楠</item>
+        <item>老孙</item>
+    </string-array>
+    <string-array name="voicer_cloud_values">
+        <item>xiaoyan</item>
+        <item>xiaoyu</item>
+        <item>catherine</item>
+        <item>henry</item>
+        <item>vimary</item>
+        <item>vixy</item>
+        <item>xiaoqi</item>
+        <item>vixf</item>
+        <item>xiaomei</item>
+        <item>xiaolin</item>
+        <item>xiaorong</item>
+        <item>xiaoqian</item>
+        <item>xiaokun</item>
+        <item>xiaoqiang</item>
+        <item>vixying</item>
+        <item>xiaoxin</item>
+        <item>nannan</item>
+        <item>vils</item>
+    </string-array>
+    <string-array name="voicer_xtts_entries">
+        <item>小燕</item>
+        <item>小峰</item>
+    </string-array>
+    <string-array name="voicer_xtts_values">
+        <item>xiaoyan</item>
+        <item>xiaofeng</item>
+    </string-array>
+    <string-array name="voicer_local_entries">
+        <item>小燕</item>
+        <item>小峰</item>
+
+    </string-array>
+    <string-array name="voicer_local_values">
+        <item>xiaoyan</item>
+        <item>xiaofeng</item>
+    </string-array>
+    <string-array name="stream_entries">
+        <item>通话</item>
+        <item>系统</item>
+        <item>铃声</item>
+        <item>音乐</item>
+        <item>闹铃</item>
+        <item>通知</item>
+    </string-array>
+    <string-array name="stream_values">
+        <item>0</item>
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
+        <item>4</item>
+        <item>5</item>
+    </string-array>
+    <string
+        name="tts_toast_format"
+        formatted="false">缓冲进度为%d%%，播放进度为%d%%</string>
+
+    <!-- 语言 -->
+    <string-array name="language_entries">
+        <item>普通话</item>
+        <item>粤语</item>
+        <item>英语</item>
+    </string-array>
+    <string-array name="language_values">
+        <item>mandarin</item>
+        <item>cantonese</item>
+        <item>en_us</item>
+    </string-array>
+
+    <!-- 标点符号 -->
+    <string-array name="punc_entries">
+        <item>有标点</item>
+        <item>无标点</item>
+    </string-array>
+    <string-array name="punc_values">
+        <item>1</item>
+        <item>0</item>
+    </string-array>
     <string name="device">Device:</string>
     <string name="no_device">&lt;Select a device&gt;</string>
     <string name="select_device">Select a device</string>
@@ -82,4 +182,38 @@
     <string name="checkbox_re">记住密码</string>
     <string name="regist">注册</string>
     <string name="button_confirm">登录</string>
+
+    <!-- LoRa设置 -->
+    <string-array name="speed_entries">
+        <item>300 kps</item>
+        <item>1200 kps</item>
+        <item>2400 kps</item>
+        <item>4800 kps</item>
+        <item>9600 kps</item>
+        <item>19200 kps</item>
+        <item>38400 kps</item>
+        <item>62500 kps</item>
+    </string-array>
+    <string-array name="speed_values">
+        <item>300</item>
+        <item>1200</item>
+        <item>2400</item>
+        <item>4800</item>
+        <item>9600</item>
+        <item>19200</item>
+        <item>38400</item>
+        <item>62500</item>
+    </string-array>
+    <string-array name="power_entries">
+        <item>10 dbm</item>
+        <item>13 dbm</item>
+        <item>17 dbm</item>
+        <item>22 dbm</item>
+    </string-array>
+    <string-array name="power_values">
+        <item>10</item>
+        <item>13</item>
+        <item>17</item>
+        <item>22</item>
+    </string-array>
 </resources>

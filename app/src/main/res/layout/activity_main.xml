@@ -15,7 +15,7 @@
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="@drawable/btn_shape"
+            android:background="@color/dodgerblue"
             android:minHeight="?attr/actionBarSize"
             android:clickable="true"
             android:focusable="true"
@@ -34,16 +34,16 @@
                         android:layout_height="wrap_content"
                         android:layout_marginStart="0dp"
                         android:text="节点数：0 邻居数：0 丢失数：0"
-                        android:textSize="17sp"
-                        android:textColor="#FFFFFF"/>
+                        android:textSize="25sp"
+                        android:textColor="#000000"/>
                     <TextView
                         android:id="@+id/hr_info"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginStart="0dp"
                         android:text="心率数据"
-                        android:textSize="17sp"
-                        android:textColor="#ffffff"/>
+                        android:textSize="25sp"
+                        android:textColor="#000000"/>
 
                 </LinearLayout>
 
@@ -51,7 +51,7 @@
 
         <com.baidu.mapapi.map.MapView
             android:id="@+id/bmapView"
-            android:layout_marginTop="56dp"
+            android:layout_marginTop="70dp"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             app:layout_constraintBottom_toBottomOf="parent"
@@ -85,9 +85,7 @@
             android:layout_alignParentBottom="true"
             android:layout_alignParentEnd="true"
             android:layout_gravity="end|bottom"
-            fab:fab_addButtonColorNormal="#1565C0"
-            fab:fab_addButtonColorPressed="#2272CD"
-            fab:fab_addButtonPlusIconColor="@color/lightblue"
+            fab:fab_addButtonPlusIconColor="@color/white"
             fab:fab_labelStyle="@style/fab_labels_style"
             android:layout_marginBottom="100dp"
             android:layout_marginEnd="0dp"
@@ -97,7 +95,7 @@
                 android:id="@+id/fab_action_a"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                fab:fab_colorNormal="@color/dodgerblue"
+                fab:fab_colorNormal="@color/materialAnalogous1"
                 fab:fab_title="呼救"
                 android:src="@drawable/ic_bell_o"
                 fab:fab_size="mini"
@@ -107,7 +105,7 @@
                 android:id="@+id/fab_action_b"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                fab:fab_colorNormal="@color/dodgerblue"
+                fab:fab_colorNormal="@color/materialAnalogous1"
                 fab:fab_title="语音"
                 android:src="@drawable/ic_microphone"
                 fab:fab_size="mini"
@@ -121,10 +119,12 @@
     <com.google.android.material.navigation.NavigationView
         android:layout_gravity="start"
         android:id="@+id/nav_view"
-        android:background="@color/royalblue"
+        android:background="@color/dodgerblue"
         android:orientation="vertical"
         android:layout_width="300dp"
         android:layout_height="match_parent"
+        android:textSize="25sp"
+        app:theme="@style/myNavigationDrawerStyle"
         app:menu="@menu/nav_menu"
          />
 

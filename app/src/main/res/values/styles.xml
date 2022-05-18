@@ -3,15 +3,19 @@
     <!-- Base application theme. -->
     <style name="BaseTheme" parent="Theme.AppCompat.Light.NoActionBar">
         <!-- Customize your theme here. -->
-        <item name="colorPrimary">@color/dodgerblue</item>
-        <item name="colorPrimaryDark">@color/blue</item>
+        <item name="colorPrimary">@color/ivory</item>
+        <item name="colorPrimaryDark">@color/lightsalmon</item>
+        <item name="colorAccent">@color/tomato</item>
 
         <item name="toolbarNavigationButtonStyle">@style/myToolbarNavigationButtonStyle</item>
         <item name="toolbarStyle">@style/ToolbarLeft</item>
+
+
     </style>
 
     <style name="AppTheme" parent="BaseTheme">
-
+        <!--为了解决白屏问题-->
+        <item name="android:windowDisablePreview">true</item>
     </style>
 
     <style name="BackgroundOnly">

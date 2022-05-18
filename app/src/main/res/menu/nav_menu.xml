@@ -3,24 +3,47 @@
     <group android:checkableBehavior="single">
         <item
             android:id="@+id/button_trace"
-            android:icon="@drawable/ic_trace"
-            android:title="Trace"/>
+            android:icon="@drawable/trace"
+            android:textColor="#FFFFFF"
+            android:textSize="18dp"
+            android:title="轨迹显示"/>
         <item
             android:id="@+id/button_num"
-            android:icon="@drawable/ic_num"
-            android:title="Number"/>
+            android:icon="@drawable/numing"
+            android:textColor="#FFFFFF"
+            android:textSize="18dp"
+            android:title="重设本机编号"/>
         <item
             android:id="@+id/button_heart_rate"
-            android:icon="@drawable/ic_hr"
-            android:title="HR"/>
+            android:icon="@drawable/heart_beat"
+            android:textColor="#FFFFFF"
+            android:textSize="18dp"
+            android:title="心率监测"/>
         <item
             android:id="@+id/button_offline_map"
-            android:icon="@drawable/ic_offline_map"
-            android:title="Offline Map"/>
+            android:icon="@drawable/map"
+            android:textColor="#FFFFFF"
+            android:textSize="18dp"
+            android:title="离线地图"/>
+        <item
+            android:id="@+id/route_search"
+            android:icon="@drawable/search"
+            android:textColor="#FFFFFF"
+            android:textSize="18dp"
+            android:title="路线搜索"/>
         <item
             android:id="@+id/ic_fence"
-            android:icon="@drawable/ic_fence"
-            android:title="Fence Demo"/>
+            android:icon="@drawable/fence"
+            android:textColor="#FFFFFF"
+            android:textSize="18dp"
+            android:title="地理围栏"/>
+        <item
+            android:id="@+id/hw_setting"
+            android:icon="@drawable/set"
+            android:textColor="#FFFFFF"
+            android:textSize="18dp"
+            android:title="传输参数"/>
+
     </group>
 
 </menu>
