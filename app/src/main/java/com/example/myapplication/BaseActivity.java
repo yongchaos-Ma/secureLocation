@@ -43,6 +43,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
+import android.view.WindowInsetsController;
 import android.view.WindowManager;
 import android.widget.EditText;
 import android.widget.FrameLayout;
@@ -226,7 +227,7 @@ public abstract class BaseActivity extends AppCompatActivity {
     private final String recordMessage = null;
 
     //@RequiresApi(api = Build.VERSION_CODES.M)
-    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
+    @RequiresApi(api = 30)
     @Override
     protected final void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -236,6 +237,12 @@ public abstract class BaseActivity extends AppCompatActivity {
 
         makeStatusBarTransparent();
         setContentView(R.layout.for_fun);
+
+        //设置亮色状态栏模式 systemUiVisibility在Android11中弃用了，可以尝试一下。
+        WindowInsetsController controller = getWindow().getInsetsController();
+        controller.setSystemBarsAppearance(0,WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS);
+        controller.setSystemBarsAppearance(0,WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS);
+
         Tv5 = findViewById(R.id.Tv_node_num_num);
         Tv7 = findViewById(R.id.Tv_lost_num_num);
         Tv6 = findViewById(R.id.Tv_hr_num_num);
@@ -299,62 +306,8 @@ public abstract class BaseActivity extends AppCompatActivity {
 
         timerFlash.schedule(timerFlashTask,0,8000);//刷新网络
     }
-//    private void requestMyPermissions() {
-//
-//        if (ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH)
-//                != PackageManager.PERMISSION_GRANTED)
-//        {//没有授权，编写申请权限代码
-//            ActivityCompat.requestPermissions(BaseActivity.this, new String[]{Manifest.permission.BLUETOOTH}, 100);
-//        } else {
-//            Log.d(TAG, "requestMyPermissions: 有蓝牙权限");
-//        }
-//        if (ContextCompat.checkSelfPermission(this,
-//                Manifest.permission.INTERNET)
-//                != PackageManager.PERMISSION_GRANTED) {
-//            //没有授权，编写申请权限代码
-//            ActivityCompat.requestPermissions(BaseActivity.this, new String[]{Manifest.permission.INTERNET}, 100);
-//        } else {
-//            Log.d(TAG, "requestMyPermissions: 有网络权限");
-//        }
-//        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
-//                != PackageManager.PERMISSION_GRANTED)
-//        {//没有授权，编写申请权限代码
-//            ActivityCompat.requestPermissions(BaseActivity.this, new String[]{Manifest.permission.ACCESS_COARSE_LOCATION}, 100);
-//        } else {
-//            Log.d(TAG, "requestMyPermissions: 有定位权限");
-//        }
-//        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
-//                != PackageManager.PERMISSION_GRANTED)
-//        {//没有授权，编写申请权限代码
-//            ActivityCompat.requestPermissions(BaseActivity.this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 100);
-//        } else {
-//            Log.d(TAG, "requestMyPermissions: 有精准定位权限");
-//        }
-//        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
-//                != PackageManager.PERMISSION_GRANTED)
-//        {//没有授权，编写申请权限代码
-//            ActivityCompat.requestPermissions(BaseActivity.this, new String[]{Manifest.permission.RECORD_AUDIO}, 100);
-//        } else {
-//            Log.d(TAG, "requestMyPermissions: 有录音权限");
-//        }
-//        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CHANGE_NETWORK_STATE)
-//                != PackageManager.PERMISSION_GRANTED)
-//        {//没有授权，编写申请权限代码
-//            ActivityCompat.requestPermissions(BaseActivity.this, new String[]{Manifest.permission.CHANGE_NETWORK_STATE}, 100);
-//        } else {
-//            Log.d(TAG, "requestMyPermissions: 有改变网络状态权限");
-//        }
-//        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE)
-//                != PackageManager.PERMISSION_GRANTED)
-//        {//没有授权，编写申请权限代码
-//            ActivityCompat.requestPermissions(BaseActivity.this, new String[]{Manifest.permission.READ_PHONE_STATE}, 100);
-//        } else {
-//            Log.d(TAG, "requestMyPermissions: 有读取手机状态权限");
-//        }
-//    }
 
     private void requestMyPermissions() {
-
 
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH)
                 != PackageManager.PERMISSION_GRANTED) {
@@ -383,13 +336,33 @@ public abstract class BaseActivity extends AppCompatActivity {
                 != PackageManager.PERMISSION_GRANTED) {
             //没有授权，编写申请权限代码
             ActivityCompat.requestPermissions(BaseActivity.this, new String[]{Manifest.permission.CHANGE_NETWORK_STATE}, 100);
-        } else if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE)
-                != PackageManager.PERMISSION_GRANTED) {
-            //没有授权，编写申请权限代码
-            ActivityCompat.requestPermissions(BaseActivity.this, new String[]{Manifest.permission.READ_PHONE_STATE}, 100);
-        } else {
+        }else {
             Log.d(TAG, "requestMyPermissions: 权限已全部获取");
         }
+
+        //API大于28（android 9）判断前台服务
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.P){
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.FOREGROUND_SERVICE)
+                    != PackageManager.PERMISSION_GRANTED) {
+                //没有授权，编写申请权限代码
+                ActivityCompat.requestPermissions(BaseActivity.this, new String[]{Manifest.permission.FOREGROUND_SERVICE}, 100);
+            }else {
+                Log.d(TAG, "requestMyPermissions: Android9 前台定位权限已获取");
+            }
+        }
+
+        //API大于29（android 10）判断前台服务
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q){
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_BACKGROUND_LOCATION)
+                    != PackageManager.PERMISSION_GRANTED) {
+                //没有授权，编写申请权限代码
+                ActivityCompat.requestPermissions(BaseActivity.this, new String[]{Manifest.permission.ACCESS_BACKGROUND_LOCATION}, 100);
+            }else {
+                Log.d(TAG, "requestMyPermissions: Android10 后台定位权限已获取");
+            }
+        }
+
+
     }
 
     private void BroadcastInitial(){
@@ -410,15 +383,11 @@ public abstract class BaseActivity extends AppCompatActivity {
         mLocalBroadcastManager.registerReceiver(peaceBroadcastReceiver, intentFilter);
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     private void UiInitial(){
-        headImage.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Log.d(TAG, "onClick: headImage");
-                setNumber();
-                headImage.setClickable(false);
-            }
+        headImage.setOnClickListener(v -> {
+            Log.d(TAG, "onClick: headImage");
+            setNumber();
+            headImage.setClickable(false);
         });
 
         navView.setNavigationItemSelectedListener(new NavigationView.OnNavigationItemSelectedListener() {
@@ -923,6 +892,7 @@ public abstract class BaseActivity extends AppCompatActivity {
                     }
                 });
         builder.setPositiveButton("确定", new DialogInterface.OnClickListener() {
+            @Override
             public void onClick(DialogInterface dialog, int which) {
                 String text = inputServer.getText().toString();
                 int buffer = 0;
@@ -999,8 +969,9 @@ public abstract class BaseActivity extends AppCompatActivity {
                                 BE_WARNED = true;
                                 hasBeenBackToNormal = false;
                             }
-                            if(danger_HR <= 5)
+                            if(danger_HR <= 5) {
                                 danger_HR++;
+                            }
                         }else if(BAND_CONNECTED && Integer.parseInt(cutted) >= 40 && danger_HR > 0 && warnTypes != 1){
                             danger_HR--;
                             warnTypes = 0;
@@ -1161,6 +1132,7 @@ public abstract class BaseActivity extends AppCompatActivity {
 
     private final Handler HRhandler = new Handler();
     private final Runnable HRrunnable = new Runnable() {
+        @Override
         public void run() {
             int len;
             if(tx_data_len > 0)
@@ -1232,6 +1204,7 @@ public abstract class BaseActivity extends AppCompatActivity {
 
     // UART service connected/disconnected
     private final ServiceConnection mServiceConnection = new ServiceConnection() {
+        @Override
         public void onServiceConnected(ComponentName className, IBinder rawBinder) {
             if (intf == intf_ble_uart) {
                 mUartService = ((UartService.LocalBinder) rawBinder)
@@ -1261,6 +1234,7 @@ public abstract class BaseActivity extends AppCompatActivity {
     };
     private final BroadcastReceiver UARTStatusChangeReceiver = new BroadcastReceiver() {
 
+        @Override
         public void onReceive(Context context, Intent intent) {
             String action = intent.getAction();
             // *********************//
@@ -1296,6 +1270,7 @@ public abstract class BaseActivity extends AppCompatActivity {
             // *********************//
             if (action.equals(UartService.ACTION_GATT_DISCONNECTED)) {
                 runOnUiThread(new Runnable() {
+                    @Override
                     public void run() {
                         Log.d(TAG, "UART_DISCONNECT_MSG");
                         mUartService.close();
@@ -1606,22 +1581,25 @@ public abstract class BaseActivity extends AppCompatActivity {
     public class LostBroadcastReceiver extends BroadcastReceiver{
         @Override
         public void onReceive(Context context, Intent intent) {
-            if(intent.getAction().equals("com.example.myapplication.LOST_BROADCAST"))
-            edgeWarningNotification();
+            if("com.example.myapplication.LOST_BROADCAST".equals(intent.getAction())) {
+                edgeWarningNotification();
+            }
         }
     }
     public class SelfWarningBroadcastReceiver extends BroadcastReceiver{
         @Override
         public void onReceive(Context context, Intent intent) {
-            if(intent.getAction().equals("com.example.myapplication.SELF_WARN_BROADCAST"))
-            sendNotificationSelf();
+            if("com.example.myapplication.SELF_WARN_BROADCAST".equals(intent.getAction())) {
+                sendNotificationSelf();
+            }
         }
     }
     public class PeaceBroadcastReceiver extends BroadcastReceiver{
         @Override
         public void onReceive(Context context, Intent intent) {
-            if(intent.getAction().equals("com.example.myapplication.PEACE_BROADCAST"))
+            if("com.example.myapplication.PEACE_BROADCAST".equals(intent.getAction())) {
                 handler.post(runnableUiBlue);
+            }
         }
     }
 
@@ -1739,8 +1717,9 @@ public abstract class BaseActivity extends AppCompatActivity {
                 notification = notificationBuilder.build();
             }
         }
-        if(notification != null)
-        notificationManager.notify(NotificationId2, notification);
+        if(notification != null) {
+            notificationManager.notify(NotificationId2, notification);
+        }
     }
 
 
@@ -1750,6 +1729,7 @@ public abstract class BaseActivity extends AppCompatActivity {
         NotificationManager notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
         Notification notification = null;
         new Thread(){
+            @Override
             public void run(){
                 handler.post(runnableUiRed);
             }

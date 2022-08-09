@@ -309,7 +309,8 @@ public class LocationActivity extends BaseActivity implements OnGetRoutePlanResu
 
 
 
-
+    private int GPSAffirmedTimes = 0;
+    private int NetworkAffirmedTimes = 0;
     public class MyLocationListener extends BDAbstractLocationListener {
         //在这个方法中接收定位结果
         public void onReceiveLocation(BDLocation location) {
@@ -342,6 +343,10 @@ public class LocationActivity extends BaseActivity implements OnGetRoutePlanResu
                         .direction(location.getDirection())
                         .latitude(location.getLatitude()).longitude(location.getLongitude())
                         .build();
+                NetworkAffirmedTimes++;
+                Log.d(TAG, "网络定位定位成功，次数："+NetworkAffirmedTimes);
+                Log.d(TAG, "网络定位结果：("+ locData.latitude+","+locData.longitude+")");
+
             } else if (location.getLocType() == BDLocation.TypeGpsLocation) {
                 locData = new MyLocationData.Builder()
                         .accuracy(location.getRadius())
@@ -349,8 +354,12 @@ public class LocationActivity extends BaseActivity implements OnGetRoutePlanResu
                         .direction(location.getDirection())
                         .latitude(location.getLatitude()).longitude(location.getLongitude())
                         .build();
+                GPSAffirmedTimes++;
+                Log.d(TAG, "GPS定位定位成功，次数："+GPSAffirmedTimes);
+                Log.d(TAG, "GPS定位结果：("+ locData.latitude+","+locData.longitude+")");
+
             }else {
-                Log.i("baidu_location_result", "location type = " + location.getLocType());
+                Log.d("baidu_location_result", "location type = " + location.getLocType());
             }
 
             baiduMap.setMyLocationData(locData);
@@ -1752,7 +1761,7 @@ public class LocationActivity extends BaseActivity implements OnGetRoutePlanResu
         //可选，设置是否使用gps，默认false
         //使用高精度和仅用设备两种定位模式的，参数必须设置为true
 
-        option.setLocationNotify(true);
+        option.setLocationNotify(false);
         //可选，设置是否当GPS有效时按照1S/1次频率输出GPS结果，默认false
 
         option.setIgnoreKillProcess(true);
@@ -1793,8 +1802,8 @@ public class LocationActivity extends BaseActivity implements OnGetRoutePlanResu
         super.onPause();
         mLocationClient.enableLocInForeground(1, notification);
         mLocationClient.start();
-
     }
+
     @Override
     protected void onDestroy() {
         mLocationClient.stop();//停止定位
@@ -1806,4 +1815,5 @@ public class LocationActivity extends BaseActivity implements OnGetRoutePlanResu
             mSearch.destroy();
         }
     }
+
 }
