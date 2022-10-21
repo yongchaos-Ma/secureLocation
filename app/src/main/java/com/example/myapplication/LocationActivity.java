@@ -633,45 +633,59 @@ public class LocationActivity extends BaseActivity implements OnGetRoutePlanResu
         }
         notification.defaults = Notification.DEFAULT_SOUND; //设置为默认的声音
 
-        baiduMap.setOnMapLongClickListener(listener);
+        //baiduMap.setOnMapLongClickListener();
         //地图长击事件
 
         //markOnTarget();
     }
 
-    BaiduMap.OnMapLongClickListener listener = new BaiduMap.OnMapLongClickListener() {
-        @Override
-        public void onMapLongClick(LatLng newPoint) {
-            if (newPoint != null) {
-                newDestination = newPoint;
-                Toast.makeText(LocationActivity.this, "Long click: " + newDestination,
-                        Toast.LENGTH_SHORT).show();
-
-            }
-        }
-    };
+//    BaiduMap.OnMapLongClickListener listener = new BaiduMap.OnMapLongClickListener() {
+//        @Override
+//        public void onMapLongClick(LatLng newPoint) {
+//            if (newPoint != null) {
+//                newDestination = newPoint;
+//                Toast.makeText(LocationActivity.this, "Long click: " + newDestination,
+//                        Toast.LENGTH_SHORT).show();
+//
+//            }
+//        }
+//    };
 
     /**
      * 发起路线规划搜索示例
      */
     public void searchButtonProcess() {
+        if (newDestination==null){
+            Toast.makeText(this, "请长按地图以选择目的地", Toast.LENGTH_SHORT).show();
+            BaiduMap.OnMapLongClickListener longClickListener = new BaiduMap.OnMapLongClickListener() {
+                @Override
+                public void onMapLongClick(LatLng newPoint) {
+                    if (newPoint != null) {
+                        newDestination = newPoint;
+                        // 重置浏览节点的路线数据
+                        mRouteLine = null;
+                        // 设置起终点信息 起点参数
+                        LatLng self = new LatLng(latitude, longitude);
+                        PlanNode startNode = PlanNode.withLocation(self);
+                        Log.d(TAG, "searchButtonProcess: " + startNode.getLocation());
+                        // 终点参数
+                        PlanNode endNode = PlanNode.withLocation(newDestination);
+                        Log.d(TAG, "searchButtonProcess: " + endNode.getLocation());
 
-// 重置浏览节点的路线数据
-        mRouteLine = null;
-        // 设置起终点信息 起点参数
-        //PlanNode startNode = PlanNode.withCityNameAndPlaceName("西安","西安邮电大学长安校区家属院");
-        LatLng self = new LatLng(latitude, longitude);
-        PlanNode startNode = PlanNode.withLocation(self);
-        Log.d(TAG, "searchButtonProcess: " + startNode.getLocation());
-        // 终点参数
-        PlanNode endNode = PlanNode.withLocation(newDestination);
-//        PlanNode endNode = PlanNode.withCityNameAndPlaceName("西安","赛格国际购物中心");
-        Log.d(TAG, "searchButtonProcess: " + endNode.getLocation());
+                        // 实际使用中请对起点终点城市进行正确的设定
+                        mSearch.walkingSearch((new WalkingRoutePlanOption()).from(startNode).to(endNode));
+                    }
+                }
+            };
+            baiduMap.setOnMapLongClickListener(longClickListener);
+        }else{
+            Toast.makeText(this, "关闭路线引导", Toast.LENGTH_SHORT).show();
+            newDestination = null;
+            mRouteLine = null;
+        }
 
-        // 实际使用中请对起点终点城市进行正确的设定
-        mSearch.walkingSearch((new WalkingRoutePlanOption())
-                .from(startNode) // 起点
-                .to(endNode)); // 终点
+
+
 
     }
 
@@ -975,10 +989,22 @@ public class LocationActivity extends BaseActivity implements OnGetRoutePlanResu
             TotalNumber = 0;
             UnconnectableNumber = 0;
             int timeNow = 0;
-            //baiduMap.clear();
+            baiduMap.clear();
             GetTime.getCurrentTime();
             options = new MarkerOptions();
-            if(EXTEND_LEGACY){
+
+            //当存在路线搜索结果时，需要每次刷新都重新生成一次路线
+            if (newDestination != null) {
+                //重置浏览节点的路线数据
+                mRouteLine = null;
+                //起点参数
+                LatLng self = new LatLng(latitude, longitude);
+                PlanNode startNode = PlanNode.withLocation(self);
+                // 终点参数
+                PlanNode endNode = PlanNode.withLocation(newDestination);
+                // 实际使用中请对起点终点城市进行正确的设定
+                mSearch.walkingSearch((new WalkingRoutePlanOption()).from(startNode).to(endNode));
+            }
 
                 for (Integer nodeNum : mapShow.keySet()){ //进入for循环，按顺序遍历（nodeNum为指引）
 
@@ -1032,17 +1058,10 @@ public class LocationActivity extends BaseActivity implements OnGetRoutePlanResu
                                     UnconnectableNumber++;
                                 }
                                 else if(NodeInfors.get(0).getWarnType() != 0){
-                                    //options.icon(mapWarningNodePics.get(nodeNum));
                                     Objects.requireNonNull(mapMarkerObjects.get(nodeNum)).icon(mapWarningNodePics.get(nodeNum));
-                                    //mapMarkers.get(nodeNum).setIcon(mapWarningNodePics.get(nodeNum));
-                                    //if(GET_WARNED){
-//                                        Intent intent = new Intent("com.example.myapplication.WARNING_BROADCAST");
-//                                        intent.setPackage("com.example.myapplication");
-//                                        intent.putExtra("dangerNode", nodeNum);
-                                    //mLocalBroadcastManager.sendBroadcast(intent);
                                     EventBus.getDefault().post(new MessageEvent(nodeNum.toString()));
                                     BE_WARNED = true;
-                                    //}
+
                                 } else if(NodeInfors.get(0).isDirect())
                                     //options.icon(mapNodePics.get(nodeNum));
                                     Objects.requireNonNull(mapMarkerObjects.get(nodeNum)).icon(mapNodePics.get(nodeNum));
@@ -1096,7 +1115,7 @@ public class LocationActivity extends BaseActivity implements OnGetRoutePlanResu
                     }else
                         Log.d(TAG, "跳过自身");
                 }
-            }
+
 
             NeighborNumber = TotalNumber - UnconnectableNumber;
 

@@ -1,9 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.example.myapplication">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-permission android:name="android.permission.BLUETOOTH" />
-    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" /> <!-- 以上为蓝牙权限 -->
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
+    <uses-permission android:name="android.permission.BLUETOOTH_SCAN" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADVERTISE" />
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+    <!-- 以上为蓝牙权限 -->
     <!-- 访问网络，进行地图相关业务数据请求，包括地图数据，路线规划，POI检索等 -->
     <uses-permission android:name="android.permission.INTERNET" /> <!-- 获取网络状态，根据网络状态切换进行数据请求网络转换 -->
     <!-- android 9.0上使用前台服务，需要添加权限 -->
@@ -40,30 +43,43 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
 
-        <activity android:name=".StorageChooseActivity" /> <!-- android:requestLegacyExternalStorage="true" -->
+        <activity android:name=".StorageChooseActivity"
+            android:exported="false" /> <!-- android:requestLegacyExternalStorage="true" -->
         <meta-data
             android:name="com.baidu.lbsapi.API_KEY"
             android:value="nuCmvvFojiaPpak1kPtSSLTl6L1fYOPe" /> <!-- <activity android:name=".DemoListActivity" /> -->
         <!-- <activity android:name=".MainActivity" /> -->
         <!--  -->
         <!-- android:label="@string/app_name" -->
-        <activity android:name=".LoginActivity">
+        <activity android:name=".LoginActivity"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-        </activity> <!-- <activity android:name=".MarkerOverlayActivity" />        <activity android:name=".WalkingSearchActivity" /> -->
-        <activity android:name=".LocationActivity" /> <!-- <activity android:name=".BlueToothActivity" /> -->
-        <activity android:name=".OfflineActivity" />
-        <activity android:name=".WalkingRouteSearch" />
-        <activity android:name=".power_individual_demo.DeviceListActivity" />
+        </activity>
+        <activity
+            android:name=".LocationActivity"
+            android:exported="false" />
+        <activity
+            android:name=".OfflineActivity"
+            android:exported="false" />
+        <activity
+            android:name=".WalkingRouteSearch"
+            android:exported="false" />
+        <activity
+            android:name=".power_individual_demo.DeviceListActivity"
+            android:exported="false" />
         <activity
             android:name=".BlueToothListActivity"
             android:configChanges="orientation|keyboardHidden"
             android:label="设备列表"
-            android:theme="@android:style/Theme.DeviceDefault.Light.Dialog.MinWidth" />
-        <activity android:name=".LoraSetting" />
+            android:theme="@android:style/Theme.DeviceDefault.Light.Dialog.MinWidth"
+            android:exported="false"/>
+        <activity
+            android:name=".LoraSetting"
+            android:exported="false"/>
 
         <service android:name=".power_individual_demo.UartService" />
         <service

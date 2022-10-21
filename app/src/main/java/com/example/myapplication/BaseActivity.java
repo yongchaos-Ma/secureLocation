@@ -43,7 +43,6 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
-import android.view.WindowInsetsController;
 import android.view.WindowManager;
 import android.widget.EditText;
 import android.widget.FrameLayout;
@@ -54,10 +53,10 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
 import androidx.core.app.NotificationCompat;
 import androidx.core.content.ContextCompat;
 import androidx.core.view.GravityCompat;
@@ -69,26 +68,6 @@ import com.baidu.mapapi.map.MapStatusUpdate;
 import com.baidu.mapapi.map.MapStatusUpdateFactory;
 import com.baidu.mapapi.map.MapView;
 import com.baidu.mapapi.model.LatLng;
-import com.example.myapplication.everyonelitepal.Node1;
-import com.example.myapplication.everyonelitepal.Node10;
-import com.example.myapplication.everyonelitepal.Node11;
-import com.example.myapplication.everyonelitepal.Node12;
-import com.example.myapplication.everyonelitepal.Node13;
-import com.example.myapplication.everyonelitepal.Node14;
-import com.example.myapplication.everyonelitepal.Node15;
-import com.example.myapplication.everyonelitepal.Node16;
-import com.example.myapplication.everyonelitepal.Node17;
-import com.example.myapplication.everyonelitepal.Node18;
-import com.example.myapplication.everyonelitepal.Node19;
-import com.example.myapplication.everyonelitepal.Node2;
-import com.example.myapplication.everyonelitepal.Node20;
-import com.example.myapplication.everyonelitepal.Node3;
-import com.example.myapplication.everyonelitepal.Node4;
-import com.example.myapplication.everyonelitepal.Node5;
-import com.example.myapplication.everyonelitepal.Node6;
-import com.example.myapplication.everyonelitepal.Node7;
-import com.example.myapplication.everyonelitepal.Node8;
-import com.example.myapplication.everyonelitepal.Node9;
 import com.example.myapplication.power_individual_demo.BleCmd06_getData;
 import com.example.myapplication.power_individual_demo.BleCmd09_getAllData;
 import com.example.myapplication.power_individual_demo.BleCmd20_setTime;
@@ -129,8 +108,6 @@ public abstract class BaseActivity extends AppCompatActivity {
     public BaiduMap baiduMap;
     protected MapStatusUpdate mapStatusUpdate;
     private DrawerLayout mDrawerLayout;
-    //测试项目坐标
-    //public final LatLng xupt = new LatLng(34.1606259200,108.9074823500);
     //GPS信息
     public static double latitude = 0.0;    //获取纬度信息
     public static double longitude = 0.0;    //获取经度信息
@@ -225,11 +202,14 @@ public abstract class BaseActivity extends AppCompatActivity {
     private SelfWarningBroadcastReceiver mSWBroadcastReceiver;
 
     private final String recordMessage = null;
+    private final ArrayList<String> permissionsNotGranted = new ArrayList<>();
+    private ActivityResultLauncher<String[]> requestPermissionLauncher;
+    private ActivityResultLauncher<String[]> advancedBtLauncher;
+    private ActivityResultLauncher<String> singlePermissionRequest;
+    private ActivityResultLauncher<Intent> requestBluetooth;
 
-    //@RequiresApi(api = Build.VERSION_CODES.M)
-    @RequiresApi(api = 30)
     @Override
-    protected final void onCreate(Bundle savedInstanceState) {
+    public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         LitePal.initialize(this);
@@ -238,10 +218,10 @@ public abstract class BaseActivity extends AppCompatActivity {
         makeStatusBarTransparent();
         setContentView(R.layout.for_fun);
 
-        //设置亮色状态栏模式 systemUiVisibility在Android11中弃用了，可以尝试一下。
-        WindowInsetsController controller = getWindow().getInsetsController();
-        controller.setSystemBarsAppearance(0,WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS);
-        controller.setSystemBarsAppearance(0,WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS);
+//        //设置亮色状态栏模式 systemUiVisibility在Android11中弃用了，可以尝试一下。
+//        WindowInsetsController controller = getWindow().getInsetsController();
+//        controller.setSystemBarsAppearance(0,WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS);
+//        controller.setSystemBarsAppearance(0,WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS);
 
         Tv5 = findViewById(R.id.Tv_node_num_num);
         Tv7 = findViewById(R.id.Tv_lost_num_num);
@@ -254,6 +234,54 @@ public abstract class BaseActivity extends AppCompatActivity {
         menuButton = findViewById(R.id.drawer_open);
 
         mMapView = findViewById(R.id.bmapView);
+
+        requestPermissionLauncher =
+                registerForActivityResult(new ActivityResultContracts.RequestMultiplePermissions(), isGranted -> {
+//                    if (!isGranted){
+//                        Toast.makeText(this,"请求失败！",Toast.LENGTH_SHORT).show();
+//                    }
+                });
+        singlePermissionRequest =
+                registerForActivityResult(new ActivityResultContracts.RequestPermission(), isGranted -> {
+                    if (isGranted){
+                        Log.d("singlePermissionRequest", "permission granted");
+                    }else{
+                        Toast.makeText(this,"您未允许后台定位权限！",Toast.LENGTH_SHORT).show();
+                    }
+                });
+        requestBluetooth = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
+
+        });
+        advancedBtLauncher =
+                registerForActivityResult(new ActivityResultContracts.RequestMultiplePermissions(), resultMap -> {
+                    boolean btPermissionAllGranted = true;
+                    for(Boolean requestResult : resultMap.values()){
+                        if (!requestResult) {
+                            btPermissionAllGranted = false;
+                            break;
+                        }
+                    }
+                    if (btPermissionAllGranted){
+                        if (!mBtAdapter.isEnabled()) {
+                            Intent enableIntent = new Intent(
+                                    BluetoothAdapter.ACTION_REQUEST_ENABLE);
+                            startActivityForResult(enableIntent, REQUEST_ENABLE_BT);
+                        }else{
+                            if (!SELFNUMBER_SETTLED) {
+                                Toast.makeText(BaseActivity.this, "请先设置本机编号！", Toast.LENGTH_SHORT)
+                                        .show();
+                            } else {
+                                Intent serverIntent = new Intent(BaseActivity.this, BlueToothListActivity.class);
+                                startActivityForResult(serverIntent, REQUEST_CONNECT_DEVICE);
+                            }
+                        }
+
+                    }else {
+                        Toast.makeText(this, "您未开启蓝牙连接权限！",Toast.LENGTH_SHORT).show();
+                    }
+
+                });
+        requestMyPermissions();
         //获得地图控制器
         baiduMap = mMapView.getMap();
         //MKOfflineMap mOffline = new MKOfflineMap();
@@ -295,74 +323,50 @@ public abstract class BaseActivity extends AppCompatActivity {
                     + "mserviceValue" + mUartService);
         }
 
+
+
         init();
         BroadcastInitial();
 
-        UiInitial();
-        requestMyPermissions();
+        uiInitial();
+
         LitePal.getDatabase();
         EventBus.getDefault().register(this);
         //mSharedPreferences = getSharedPreferences(LoraSetting.PREFER_NAME, Activity.MODE_PRIVATE);
 
         timerFlash.schedule(timerFlashTask,0,8000);//刷新网络
+
     }
 
-    private void requestMyPermissions() {
+    public void requestMyPermissions() {
+        ArrayList<String> permissionsList= new ArrayList<>();
+        permissionsList.add(Manifest.permission.ACCESS_FINE_LOCATION);
+        permissionsList.add(Manifest.permission.ACCESS_COARSE_LOCATION);
+//        permissionsList.add(Manifest.permission.BLUETOOTH);
+//        permissionsList.add(Manifest.permission.BLUETOOTH_ADMIN);
+        permissionsList.add(Manifest.permission.INTERNET);
+        permissionsList.add(Manifest.permission.RECORD_AUDIO);
+        permissionsList.add(Manifest.permission.CHANGE_NETWORK_STATE);
 
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH)
-                != PackageManager.PERMISSION_GRANTED) {
-            //没有授权，编写申请权限代码
-            ActivityCompat.requestPermissions(BaseActivity.this, new String[]{Manifest.permission.BLUETOOTH}, 100);
-        }
-        else if (ContextCompat.checkSelfPermission(this, Manifest.permission.INTERNET)
-                != PackageManager.PERMISSION_GRANTED) {
-            //没有授权，编写申请权限代码
-            ActivityCompat.requestPermissions(BaseActivity.this, new String[]{Manifest.permission.INTERNET}, 100);
-        }
-        else if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
-                != PackageManager.PERMISSION_GRANTED) {
-            //没有授权，编写申请权限代码
-            ActivityCompat.requestPermissions(BaseActivity.this, new String[]{Manifest.permission.ACCESS_COARSE_LOCATION}, 100);
-        }
-        else if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
-                != PackageManager.PERMISSION_GRANTED) {
-            //没有授权，编写申请权限代码
-            ActivityCompat.requestPermissions(BaseActivity.this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 100);
-        } else if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
-                != PackageManager.PERMISSION_GRANTED) {
-            //没有授权，编写申请权限代码
-            ActivityCompat.requestPermissions(BaseActivity.this, new String[]{Manifest.permission.RECORD_AUDIO}, 100);
-        } else if (ContextCompat.checkSelfPermission(this, Manifest.permission.CHANGE_NETWORK_STATE)
-                != PackageManager.PERMISSION_GRANTED) {
-            //没有授权，编写申请权限代码
-            ActivityCompat.requestPermissions(BaseActivity.this, new String[]{Manifest.permission.CHANGE_NETWORK_STATE}, 100);
-        }else {
-            Log.d(TAG, "requestMyPermissions: 权限已全部获取");
-        }
-
-        //API大于28（android 9）判断前台服务
+        //API大于28（android 9）添加前台服务
         if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.P){
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.FOREGROUND_SERVICE)
-                    != PackageManager.PERMISSION_GRANTED) {
-                //没有授权，编写申请权限代码
-                ActivityCompat.requestPermissions(BaseActivity.this, new String[]{Manifest.permission.FOREGROUND_SERVICE}, 100);
-            }else {
-                Log.d(TAG, "requestMyPermissions: Android9 前台定位权限已获取");
+            permissionsList.add(Manifest.permission.FOREGROUND_SERVICE);
+        }
+        boolean permissionsAllGranted = true;
+
+        for (String permission : permissionsList) {
+            if (ContextCompat.checkSelfPermission(this, permission) !=
+                    PackageManager.PERMISSION_GRANTED) {
+                permissionsAllGranted = false;
+                Log.d("permissionCheck", permission+ "not granted");
             }
         }
 
-        //API大于29（android 10）判断前台服务
-        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q){
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_BACKGROUND_LOCATION)
-                    != PackageManager.PERMISSION_GRANTED) {
-                //没有授权，编写申请权限代码
-                ActivityCompat.requestPermissions(BaseActivity.this, new String[]{Manifest.permission.ACCESS_BACKGROUND_LOCATION}, 100);
-            }else {
-                Log.d(TAG, "requestMyPermissions: Android10 后台定位权限已获取");
-            }
+        int size=permissionsList.size();
+        String[] requirePermissions = permissionsList.toArray(new String[size]);
+        if(!permissionsAllGranted){
+            requestPermissionLauncher.launch(requirePermissions);
         }
-
-
     }
 
     private void BroadcastInitial(){
@@ -383,7 +387,7 @@ public abstract class BaseActivity extends AppCompatActivity {
         mLocalBroadcastManager.registerReceiver(peaceBroadcastReceiver, intentFilter);
     }
 
-    private void UiInitial(){
+    private void uiInitial(){
         headImage.setOnClickListener(v -> {
             Log.d(TAG, "onClick: headImage");
             setNumber();
@@ -471,6 +475,7 @@ public abstract class BaseActivity extends AppCompatActivity {
         });
 
         buttonFir.setOnClickListener(new View.OnClickListener() {
+            @Override
             public void onClick(View v) {
                 if(isOdd(p[0])){
                     //向其他成员发送急救信息
@@ -495,6 +500,7 @@ public abstract class BaseActivity extends AppCompatActivity {
             }
         });
         buttonSec.setOnClickListener(new View.OnClickListener() {
+            @Override
             public void onClick(View v) {
                 new RecognizeModule().startNoDialogOffline(BaseActivity.this);
                 //startNoDialogOffline(BaseActivity.this);
@@ -502,8 +508,9 @@ public abstract class BaseActivity extends AppCompatActivity {
         });
         final int[] i = {1};
         buttonFou.setOnClickListener(new View.OnClickListener() {
+            @Override
             public void onClick(View v) {
-                if(isOdd(i[0])){
+                if(isOdd(i[0]) || !CONNECT_STATUS ){
                     onBluetoothAction();
                 }else {
                     onBluetoothDisconnect();
@@ -526,9 +533,7 @@ public abstract class BaseActivity extends AppCompatActivity {
 
             @Override
             public void onDrawerClosed(@NonNull View drawerView) {
-                if(!EXTEND_LEGACY){
-                    loadChoice();
-                }
+
             }
 
             @Override
@@ -610,68 +615,68 @@ public abstract class BaseActivity extends AppCompatActivity {
     }
 
 
-    private void loadChoice(){
-        //测试按键
-        AlertDialog.Builder loadBuilder = new AlertDialog.Builder(BaseActivity.this);
-        loadBuilder.setTitle("检测到存档，是否继承上一次的数据？")
-                .setIcon(R.drawable.ic_attention)
-                .setNegativeButton("取消", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        ChooseNewStorageData();
-                        dialog.dismiss();
-                    }
-                });
-        loadBuilder.setPositiveButton("确定", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                EXTEND_LEGACY = true;
-                loadingClick();
-            }
-        });
-        loadBuilder.show();
-    }
-    private void ChooseNewStorageData(){
-        //测试按键
-        AlertDialog.Builder newStorageBuilder = new AlertDialog.Builder(BaseActivity.this);
-        newStorageBuilder.setTitle("选择不继承将直接删除之前存储的数据，是否继续？")
-                .setIcon(R.drawable.ic_attention)
-                .setNegativeButton("我再想想", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        dialog.dismiss();
-                        loadChoice();
-                    }
-                });
-        newStorageBuilder.setPositiveButton("我确定", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                loadingClick();
-                LitePal.deleteAll(SelfLocationDatabase.class);
-                LitePal.deleteAll(Node1.class);
-                LitePal.deleteAll(Node2.class);
-                LitePal.deleteAll(Node3.class);
-                LitePal.deleteAll(Node4.class);
-                LitePal.deleteAll(Node5.class);
-                LitePal.deleteAll(Node6.class);
-                LitePal.deleteAll(Node7.class);
-                LitePal.deleteAll(Node8.class);
-                LitePal.deleteAll(Node9.class);
-                LitePal.deleteAll(Node10.class);
-                LitePal.deleteAll(Node11.class);
-                LitePal.deleteAll(Node12.class);
-                LitePal.deleteAll(Node13.class);
-                LitePal.deleteAll(Node14.class);
-                LitePal.deleteAll(Node15.class);
-                LitePal.deleteAll(Node16.class);
-                LitePal.deleteAll(Node17.class);
-                LitePal.deleteAll(Node18.class);
-                LitePal.deleteAll(Node19.class);
-                LitePal.deleteAll(Node20.class);
-            }
-        });
-        newStorageBuilder.show();
-    }
+//    private void loadChoice(){
+//        //测试按键
+//        AlertDialog.Builder loadBuilder = new AlertDialog.Builder(BaseActivity.this);
+//        loadBuilder.setTitle("检测到存档，是否继承上一次的数据？")
+//                .setIcon(R.drawable.ic_attention)
+//                .setNegativeButton("取消", new DialogInterface.OnClickListener() {
+//                    @Override
+//                    public void onClick(DialogInterface dialog, int which) {
+//                        ChooseNewStorageData();
+//                        dialog.dismiss();
+//                    }
+//                });
+//        loadBuilder.setPositiveButton("确定", new DialogInterface.OnClickListener() {
+//            @Override
+//            public void onClick(DialogInterface dialog, int which) {
+//                EXTEND_LEGACY = true;
+//                loadingClick();
+//            }
+//        });
+//        loadBuilder.show();
+//    }
+//    private void ChooseNewStorageData(){
+//        //测试按键
+//        AlertDialog.Builder newStorageBuilder = new AlertDialog.Builder(BaseActivity.this);
+//        newStorageBuilder.setTitle("选择不继承将直接删除之前存储的数据，是否继续？")
+//                .setIcon(R.drawable.ic_attention)
+//                .setNegativeButton("我再想想", new DialogInterface.OnClickListener() {
+//                    @Override
+//                    public void onClick(DialogInterface dialog, int which) {
+//                        dialog.dismiss();
+//                        loadChoice();
+//                    }
+//                });
+//        newStorageBuilder.setPositiveButton("我确定", new DialogInterface.OnClickListener() {
+//            @Override
+//            public void onClick(DialogInterface dialog, int which) {
+//                loadingClick();
+//                LitePal.deleteAll(SelfLocationDatabase.class);
+//                LitePal.deleteAll(Node1.class);
+//                LitePal.deleteAll(Node2.class);
+//                LitePal.deleteAll(Node3.class);
+//                LitePal.deleteAll(Node4.class);
+//                LitePal.deleteAll(Node5.class);
+//                LitePal.deleteAll(Node6.class);
+//                LitePal.deleteAll(Node7.class);
+//                LitePal.deleteAll(Node8.class);
+//                LitePal.deleteAll(Node9.class);
+//                LitePal.deleteAll(Node10.class);
+//                LitePal.deleteAll(Node11.class);
+//                LitePal.deleteAll(Node12.class);
+//                LitePal.deleteAll(Node13.class);
+//                LitePal.deleteAll(Node14.class);
+//                LitePal.deleteAll(Node15.class);
+//                LitePal.deleteAll(Node16.class);
+//                LitePal.deleteAll(Node17.class);
+//                LitePal.deleteAll(Node18.class);
+//                LitePal.deleteAll(Node19.class);
+//                LitePal.deleteAll(Node20.class);
+//            }
+//        });
+//        newStorageBuilder.show();
+//    }
 
     private void loadingClick(){
         final PopupWindow popupWindow = new PopupWindow();
@@ -695,12 +700,17 @@ public abstract class BaseActivity extends AppCompatActivity {
 
     private void onItemPlusSelected(MenuItem item){
         int itemId = item.getItemId();
-        if (itemId == R.id.button_offline_map) {// 求救
+        if (itemId == R.id.button_offline_map) {
+            // 求救
             startActivity(new Intent(this, OfflineActivity.class));
-        } else if (itemId == R.id.button_trace) {// 轨迹
-            getCurrentTime();
-            TrackdialogChoice();
-        } else if (itemId == R.id.button_num) {// 编号
+        }
+//        else if (itemId == R.id.button_trace) {
+//            // 轨迹
+//            getCurrentTime();
+//            TrackdialogChoice();
+//        }
+        else if (itemId == R.id.button_num) {
+            // 编号
             //测试按键
             final EditText inputServer = new EditText(BaseActivity.this);
             AlertDialog.Builder builder = new AlertDialog.Builder(BaseActivity.this);
@@ -731,7 +741,8 @@ public abstract class BaseActivity extends AppCompatActivity {
                 }
             });
             builder.show();
-        } else if (itemId == R.id.button_heart_rate) {// 心率
+        } else if (itemId == R.id.button_heart_rate) {
+            // 心率
             if (!BAND_CONNECTED) {
                 Intent newIntent = new Intent(BaseActivity.this, DeviceListActivity.class);
                 startActivityForResult(newIntent, REQUEST_SELECT_DEVICE_BAND);
@@ -745,11 +756,13 @@ public abstract class BaseActivity extends AppCompatActivity {
                 //button4.setClickable(false);
                 dialogChoice();
             }
-        } else if(itemId == R.id.ic_fence){//围栏
+        } else if(itemId == R.id.ic_fence){
+            //围栏
             setTarget = isOdd(q[0]);
             q[0]++;
 
-        } else if(itemId == R.id.route_search){//路线搜索
+        } else if(itemId == R.id.route_search){
+            //路线搜索
             EventBus.getDefault().post(new BaseActivity.routeSearchEvent(true));
 
         } else if(itemId == R.id.hw_setting){
@@ -760,21 +773,38 @@ public abstract class BaseActivity extends AppCompatActivity {
     }
 
     public void onBluetoothAction(){
-        if (!mBtAdapter.isEnabled()) {
-            Intent enableIntent = new Intent(
-                    BluetoothAdapter.ACTION_REQUEST_ENABLE);
-            startActivityForResult(enableIntent, REQUEST_ENABLE_BT);
-        } else {
-            Toast.makeText(BaseActivity.this, "蓝牙已打开", Toast.LENGTH_SHORT)
-                    .show();
-            if (!SELFNUMBER_SETTLED) {
-                Toast.makeText(BaseActivity.this, "请先设置本机编号！", Toast.LENGTH_SHORT)
-                        .show();
+
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S){
+            String[] extraBluetoothPermissions = new String[]{
+                    Manifest.permission.BLUETOOTH_CONNECT,
+                    Manifest.permission.BLUETOOTH_SCAN,
+                    Manifest.permission.BLUETOOTH_ADVERTISE
+            };
+            advancedBtLauncher.launch(extraBluetoothPermissions);
+        }else{
+            String[] bluetoothPermissions = new String[]{
+                    Manifest.permission.BLUETOOTH,
+                    Manifest.permission.BLUETOOTH_ADMIN
+            };
+            requestPermissionLauncher.launch(bluetoothPermissions);
+            if (!mBtAdapter.isEnabled()) {
+                Intent enableIntent = new Intent(
+                        BluetoothAdapter.ACTION_REQUEST_ENABLE);
+                startActivityForResult(enableIntent, REQUEST_ENABLE_BT);
             } else {
-                Intent serverIntent = new Intent(BaseActivity.this, BlueToothListActivity.class);
-                startActivityForResult(serverIntent, REQUEST_CONNECT_DEVICE);
+                Toast.makeText(BaseActivity.this, "蓝牙已打开", Toast.LENGTH_SHORT)
+                        .show();
+                if (!SELFNUMBER_SETTLED) {
+                    Toast.makeText(BaseActivity.this, "请先设置本机编号！", Toast.LENGTH_SHORT)
+                            .show();
+                } else {
+                    Intent serverIntent = new Intent(BaseActivity.this, BlueToothListActivity.class);
+                    startActivityForResult(serverIntent, REQUEST_CONNECT_DEVICE);
+                }
             }
         }
+
     }
     public void onBluetoothDisconnect(){
         if (!CONNECT_STATUS && !BAND_CONNECTED) {
@@ -906,8 +936,9 @@ public abstract class BaseActivity extends AppCompatActivity {
                         selfNum.setText("自身编号: " + SelfNumber);
                         selfName.setText("测试人员" + SelfNumber);
                         headImage.setImageResource(R.drawable.head_new);
-                        //TestNotification();
-
+                        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q){
+                            singlePermissionRequest.launch(Manifest.permission.ACCESS_BACKGROUND_LOCATION);
+                        }
                     }else {
                         Toast.makeText(BaseActivity.this, "请输入1到20之间的数字！", Toast.LENGTH_SHORT).show();
                     }
@@ -1226,6 +1257,7 @@ public abstract class BaseActivity extends AppCompatActivity {
             }
         }
 
+        @Override
         public void onServiceDisconnected(ComponentName classname) {
             if (intf == intf_ble_uart) {
                 mUartService = null;
@@ -1457,16 +1489,13 @@ public abstract class BaseActivity extends AppCompatActivity {
         @Override
         public void run() {
             //更新界面
-            if(EXTEND_LEGACY){
-                Log.d(TAG, "run: "+TotalNumber+" & "+UnconnectableNumber);
-                //Tv5.setText("节点数：" + TotalNumber  + " 邻居数：" + NeighborNumber +" 丢失数："+ UnconnectableNumber);
-                //Tv5.setText("节点数：" + TotalNumber +" 丢失数："+ UnconnectableNumber);
-                Tv5.setText(String.valueOf(TotalNumber) );
-                Tv7.setText(String.valueOf(UnconnectableNumber));
-            }
-//            else{
-//                Tv5.setText("蓝牙尚未连接");
-//            }
+
+            Log.d(TAG, "run: "+TotalNumber+" & "+UnconnectableNumber);
+            //Tv5.setText("节点数：" + TotalNumber  + " 邻居数：" + NeighborNumber +" 丢失数："+ UnconnectableNumber);
+            //Tv5.setText("节点数：" + TotalNumber +" 丢失数："+ UnconnectableNumber);
+            Tv5.setText(String.valueOf(TotalNumber) );
+            Tv7.setText(String.valueOf(UnconnectableNumber));
+
             Tv5.setGravity(Gravity.START);
 
         }
@@ -1666,8 +1695,9 @@ public abstract class BaseActivity extends AppCompatActivity {
             }
         }
 
-        if(notification != null)
-        notificationManager.notify(NotificationId1, notification);
+        if(notification != null) {
+            notificationManager.notify(NotificationId1, notification);
+        }
     }
 
     public void sendNotificationOthers(int dangerNode ){

@@ -9,10 +9,12 @@ public class Node2 extends NodeMother {
     private Integer HeartRate;
     private boolean direct;
 
+    @Override
     public boolean isDirect() {
         return direct;
     }
 
+    @Override
     public void setDirect(boolean direct) {
         this.direct = direct;
     }

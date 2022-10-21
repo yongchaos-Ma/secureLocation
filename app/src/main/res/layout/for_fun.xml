@@ -44,7 +44,7 @@
                 android:src="@drawable/list"
                 android:layout_weight="5"/>
 
-            <TextView
+            <EditText
                 android:layout_width="260dp"
                 android:layout_height="wrap_content"
                 android:background="@drawable/bar_hint"
